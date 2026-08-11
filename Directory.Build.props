@@ -1,0 +1,58 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!--
+      InvariantGlobalization is deliberately NOT enabled. It would trim the container image, but
+      grounding verification folds diacritics via string.Normalize to match French certificate
+      text (NFR-16), and that API is unsupported in invariant mode. Correct FR/EN matching is
+      worth more than a few MB, so the ICU-bearing Debian base images are used.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    Central package management. Versions live in Directory.Packages.props so nine services
+    can never drift onto different EF Core or MassTransit versions (SRS §5.3).
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Repo layout">
+    <RepoRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Certiflow.sln))/</RepoRoot>
+  </PropertyGroup>
+
+  <!--
+    Test projects: xUnit, readable assertions, and no coverage threshold enforced here
+    (NFR-17's 80% domain bar is checked in CI, not on every local build).
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!--
+      CA1707 (no underscores in member names) is a public-API naming rule and is wrong for tests.
+      Test names here are sentences — Approval_is_blocked_until_every_mandatory_field_is_resolved —
+      because the test list is documentation of the domain rules, and that reads far better in a
+      failure report than ApprovalIsBlockedUntilEveryMandatoryFieldIsResolved. Suppressed only for
+      test projects; production code is still held to the rule.
+    -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+</Project>

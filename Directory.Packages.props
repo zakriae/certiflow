@@ -1,0 +1,39 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!--
+    Every package used anywhere in the solution, versioned once. Grouped by the layer that
+    consumes it, so an entry appearing under the wrong heading is visible in review.
+    Domain projects reference none of them.
+  -->
+  <ItemGroup Label="Application layer">
+    <!--
+      MediatR pinned to 12.4.1 deliberately: it is the last Apache-2.0 release. From 12.5.0 the
+      package moved to a paid commercial licence. 12.4.1 does everything this project needs from
+      it — request/handler dispatch and pipeline behaviours.
+    -->
+    <PackageVersion Include="MediatR" Version="12.4.1" />
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.19" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!--
+      FluentAssertions pinned to 6.x deliberately: 7.0 moved to a paid commercial licence.
+      6.12.x is Apache-2.0 and does everything this project needs.
+    -->
+    <PackageVersion Include="FluentAssertions" Version="6.12.2" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
+    <!-- Asserts the dependency rule of SRS §5.2 so it fails the build, not code review (NFR-18). -->
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+  </ItemGroup>
+
+</Project>

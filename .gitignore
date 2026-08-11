@@ -1,0 +1,53 @@
+# .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.userosscache
+*.suo
+*.dll
+*.exe
+*.pdb
+*.cache
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.trx
+*.nupkg
+
+# Rider / VS / VS Code
+.idea/
+.vs/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+
+# macOS
+.DS_Store
+
+# Local secrets — SRS NFR-9: no secrets in config, ever
+appsettings.Development.local.json
+appsettings.*.local.json
+*.env
+.env.*
+!.env.example
+
+# Azure
+.azure/
+*.azurePubxml
+*.publishsettings
+
+# Aspire
+.aspire/
