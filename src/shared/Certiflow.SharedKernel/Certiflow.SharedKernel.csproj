@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Deliberately empty of PackageReferences. This assembly is referenced by every Domain
+    project, so anything added here lands inside the domain layer of nine services.
+    The architecture test in tests/Certiflow.ArchitectureTests asserts that stays true.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.SharedKernel</RootNamespace>
+  </PropertyGroup>
+
+</Project>
