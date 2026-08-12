@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Integration event DTOs only, and no PackageReference or ProjectReference of any kind —
+    not even Certiflow.SharedKernel. This assembly is the Published Language between contexts
+    (SRS §4.3); the moment a domain type or a framework type leaks in here, eight services
+    start sharing a model and the boundaries stop being real.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Contracts</RootNamespace>
+  </PropertyGroup>
+
+</Project>
