@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Zero NuGet dependencies, and that is load-bearing here rather than decorative: grounding
+    verification and confidence scoring are the two things a technical buyer will probe hardest
+    (SRS §17.1, §19 Q3-Q4), and they need to be provable in tests that touch no PDF, no HTTP and
+    no model. PdfPig and the Azure OpenAI SDK live in Infrastructure behind an ACL (SRS §4.3).
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Intelligence.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.SharedKernel/Certiflow.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    These tests are the defensibility gate for SRS §19 Q3 and Q4 ("what stops the AI hallucinating
+    a date?", "why not trust the model's own confidence?"). They run against string literals — no
+    PDF, no model, no network — which is only possible because grounding and scoring are pure.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Intelligence.Domain.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/document-intelligence/Certiflow.Intelligence.Domain/Certiflow.Intelligence.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
