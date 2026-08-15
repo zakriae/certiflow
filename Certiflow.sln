@@ -14,7 +14,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Contracts", "src/
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.SupplierRegistry.Domain", "src/services/supplier-registry/Certiflow.SupplierRegistry.Domain/Certiflow.SupplierRegistry.Domain.csproj", "{A0000002-0000-0000-0000-000000000001}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Intake.Domain", "src/services/document-intake/Certiflow.Intake.Domain/Certiflow.Intake.Domain.csproj", "{A0000002-0000-0000-0000-000000000002}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.SupplierRegistry.Domain.Tests", "tests/Certiflow.SupplierRegistry.Domain.Tests/Certiflow.SupplierRegistry.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000001}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Intake.Domain.Tests", "tests/Certiflow.Intake.Domain.Tests/Certiflow.Intake.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000002}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,10 +38,18 @@ Global
 		{A0000002-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000002-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0000002-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0000002-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0000002-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0000002-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0000002-0000-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +58,8 @@ Global
 		{A0000001-0000-0000-0000-000000000001} = {F0000001-0000-0000-0000-000000000001}
 		{A0000001-0000-0000-0000-000000000002} = {F0000001-0000-0000-0000-000000000001}
 		{A0000002-0000-0000-0000-000000000001} = {F0000001-0000-0000-0000-000000000002}
+		{A0000002-0000-0000-0000-000000000002} = {F0000001-0000-0000-0000-000000000002}
 		{A0000003-0000-0000-0000-000000000001} = {F0000001-0000-0000-0000-000000000003}
+		{A0000003-0000-0000-0000-000000000002} = {F0000001-0000-0000-0000-000000000003}
 	EndGlobalSection
 EndGlobal
