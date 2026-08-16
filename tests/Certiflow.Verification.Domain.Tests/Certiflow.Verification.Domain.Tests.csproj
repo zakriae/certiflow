@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Verification.Domain.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/verification/Certiflow.Verification.Domain/Certiflow.Verification.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
