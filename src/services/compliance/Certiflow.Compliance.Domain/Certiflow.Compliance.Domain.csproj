@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SRS §5.2: the Domain project has zero NuGet dependencies. No EF Core, no MediatR, no HTTP.
+    The compliance rules are the most valuable thing in this repo and they must be testable
+    without a database. Enforced by tests/Certiflow.ArchitectureTests, not by good intentions.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Compliance.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.SharedKernel/Certiflow.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pure domain tests: no mocks, no database, no Testcontainers. Needing none of those is the
+    argument for Clean Architecture, not a happy accident (tech-stack doc §11).
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Compliance.Domain.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/compliance/Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
