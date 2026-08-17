@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Verification.Doma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Compliance.Domain", "src/services/compliance/Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj", "{A0000002-0000-0000-0000-000000000005}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Audit.Domain", "src/services/audit-trail/Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj", "{A0000002-0000-0000-0000-000000000006}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.SupplierRegistry.Domain.Tests", "tests/Certiflow.SupplierRegistry.Domain.Tests/Certiflow.SupplierRegistry.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000001}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Intake.Domain.Tests", "tests/Certiflow.Intake.Domain.Tests/Certiflow.Intake.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000002}"
@@ -31,6 +33,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Verification.Domain.Tests", "tests/Certiflow.Verification.Domain.Tests/Certiflow.Verification.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000004}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Compliance.Domain.Tests", "tests/Certiflow.Compliance.Domain.Tests/Certiflow.Compliance.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000005}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Audit.Domain.Tests", "tests/Certiflow.Audit.Domain.Tests/Certiflow.Audit.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000006}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +70,10 @@ Global
 		{A0000002-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000002-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0000002-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0000002-0000-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0000002-0000-0000-0000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0000002-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0000002-0000-0000-0000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -86,6 +94,10 @@ Global
 		{A0000003-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0000003-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,10 +110,12 @@ Global
 		{A0000002-0000-0000-0000-000000000003} = {F0000001-0000-0000-0000-000000000002}
 		{A0000002-0000-0000-0000-000000000004} = {F0000001-0000-0000-0000-000000000002}
 		{A0000002-0000-0000-0000-000000000005} = {F0000001-0000-0000-0000-000000000002}
+		{A0000002-0000-0000-0000-000000000006} = {F0000001-0000-0000-0000-000000000002}
 		{A0000003-0000-0000-0000-000000000001} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000002} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000003} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000004} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000005} = {F0000001-0000-0000-0000-000000000003}
+		{A0000003-0000-0000-0000-000000000006} = {F0000001-0000-0000-0000-000000000003}
 	EndGlobalSection
 EndGlobal

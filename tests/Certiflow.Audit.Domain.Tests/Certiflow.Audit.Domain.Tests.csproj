@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Audit.Domain.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/audit-trail/Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
