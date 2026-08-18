@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    References every Domain assembly so the rules below are checked against all of them at once.
+    A new bounded context is added here in one line, and it is immediately held to the same rule.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.ArchitectureTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/shared/Certiflow.SharedKernel/Certiflow.SharedKernel.csproj" />
+    <ProjectReference Include="../../src/shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
+    <ProjectReference Include="../../src/services/supplier-registry/Certiflow.SupplierRegistry.Domain/Certiflow.SupplierRegistry.Domain.csproj" />
+    <ProjectReference Include="../../src/services/document-intake/Certiflow.Intake.Domain/Certiflow.Intake.Domain.csproj" />
+    <ProjectReference Include="../../src/services/document-intelligence/Certiflow.Intelligence.Domain/Certiflow.Intelligence.Domain.csproj" />
+    <ProjectReference Include="../../src/services/verification/Certiflow.Verification.Domain/Certiflow.Verification.Domain.csproj" />
+    <ProjectReference Include="../../src/services/compliance/Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj" />
+    <ProjectReference Include="../../src/services/audit-trail/Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

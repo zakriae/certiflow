@@ -36,6 +36,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Compliance.Domain
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.Audit.Domain.Tests", "tests/Certiflow.Audit.Domain.Tests/Certiflow.Audit.Domain.Tests.csproj", "{A0000003-0000-0000-0000-000000000006}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Certiflow.ArchitectureTests", "tests/Certiflow.ArchitectureTests/Certiflow.ArchitectureTests.csproj", "{A0000003-0000-0000-0000-000000000007}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +100,10 @@ Global
 		{A0000003-0000-0000-0000-000000000006}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0000003-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0000003-0000-0000-0000-000000000006}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0000003-0000-0000-0000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0000003-0000-0000-0000-000000000007}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -117,5 +123,6 @@ Global
 		{A0000003-0000-0000-0000-000000000004} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000005} = {F0000001-0000-0000-0000-000000000003}
 		{A0000003-0000-0000-0000-000000000006} = {F0000001-0000-0000-0000-000000000003}
+		{A0000003-0000-0000-0000-000000000007} = {F0000001-0000-0000-0000-000000000003}
 	EndGlobalSection
 EndGlobal
