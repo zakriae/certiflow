@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SRS §5.2: Application depends on Domain and on abstractions only.
+    Note what is absent: Certiflow.Contracts. Integration events are the Published Language
+    *between* services and are translated into these commands at the Infrastructure boundary
+    (ADR-0004). An Application layer that took integration events as its input parameters would be
+    shaped by another service's wire format.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Compliance.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
