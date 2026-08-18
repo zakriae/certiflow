@@ -21,6 +21,7 @@
     <ProjectReference Include="../../src/services/document-intelligence/Certiflow.Intelligence.Domain/Certiflow.Intelligence.Domain.csproj" />
     <ProjectReference Include="../../src/services/verification/Certiflow.Verification.Domain/Certiflow.Verification.Domain.csproj" />
     <ProjectReference Include="../../src/services/compliance/Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj" />
+    <ProjectReference Include="../../src/services/compliance/Certiflow.Compliance.Application/Certiflow.Compliance.Application.csproj" />
     <ProjectReference Include="../../src/services/audit-trail/Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj" />
   </ItemGroup>
 

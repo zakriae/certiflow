@@ -150,6 +150,67 @@ public sealed class DependencyRuleTests
             FailingTypes(result));
     }
 
+    /// <summary>
+    /// Application assemblies, by name. Grows as each context gets its use cases; the rules below
+    /// then apply to it automatically.
+    /// </summary>
+    private static readonly string[] ApplicationContexts = ["Compliance"];
+
+    public static TheoryData<string> ApplicationLayers() => [.. ApplicationContexts];
+
+    private static Assembly ApplicationAssemblyFor(string context) => context switch
+    {
+        "Compliance" => typeof(Compliance.Application.DependencyInjection).Assembly,
+        _ => throw new ArgumentOutOfRangeException(nameof(context), context, "Unknown application layer."),
+    };
+
+    [Theory]
+    [MemberData(nameof(ApplicationLayers))]
+    public void Application_does_not_depend_on_the_integration_event_contracts(string context)
+    {
+        // ADR-0004. Integration events are the Published Language *between* services, translated at
+        // the Infrastructure boundary. An Application layer that took them as command parameters
+        // would be shaped by another service's wire format, and a change to BC1's contract would
+        // reach into BC5's use cases.
+        var result = Types.InAssembly(ApplicationAssemblyFor(context))
+            .ShouldNot()
+            .HaveDependencyOn("Certiflow.Contracts")
+            .GetResult();
+
+        result.IsSuccessful.Should().BeTrue(
+            "{0}.Application must not reference Certiflow.Contracts, but these types do: {1}",
+            context,
+            FailingTypes(result));
+    }
+
+    [Theory]
+    [MemberData(nameof(ApplicationLayers))]
+    public void Application_does_not_depend_on_persistence_or_transport(string context)
+    {
+        // Application may use MediatR, FluentValidation and DI abstractions — it may not know how
+        // anything is stored or delivered. The ports it declares are the seam, and the moment a
+        // handler references EF Core or MassTransit directly, that seam is gone.
+        string[] forbidden =
+        [
+            "Microsoft.EntityFrameworkCore",
+            "Microsoft.AspNetCore",
+            "MassTransit",
+            "Azure",
+            "System.Data",
+            "Microsoft.Data",
+        ];
+
+        var result = Types.InAssembly(ApplicationAssemblyFor(context))
+            .ShouldNot()
+            .HaveDependencyOnAny(forbidden)
+            .GetResult();
+
+        result.IsSuccessful.Should().BeTrue(
+            "{0}.Application must stay free of persistence and transport, but these types reference it: {1}",
+            context,
+            FailingTypes(result));
+    }
+
     [Fact]
     public void The_shared_kernel_contains_no_business_concepts()
     {
