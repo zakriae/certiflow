@@ -18,8 +18,31 @@
     <PackageVersion Include="MediatR" Version="12.4.1" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.19" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.19" />
+    <!--
+      On 10.0.x rather than 9.0.x even though everything targets net9.0. Azure.Core pulls
+      Microsoft.Extensions.Hosting.Abstractions 10.0.x transitively, and with central transitive
+      pinning enabled a 9.0.x ceiling here is a hard NU1109 downgrade error rather than a warning.
+      These packages ship a netstandard2.0 asset, so net9.0 consumes them without issue.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup Label="AI">
+    <!--
+      The only place an LLM SDK is allowed to appear. It sits behind IFieldExtractor so the domain
+      never sees it (SRS §4.3) — which is what let the model change from gpt-4o-mini to gpt-5-mini
+      without touching a line of business logic.
+    -->
+    <!--
+      On a beta deliberately. The 2.1.0 stable release still serialises MaxOutputTokenCount as
+      `max_tokens`, which every gpt-5-generation model rejects outright with HTTP 400 - the stable
+      SDK simply cannot talk to the current model generation. Verified by trying it.
+    -->
+    <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
+    <!-- Keyless auth: DefaultAzureCredential, so no API key exists to leak (NFR-9). -->
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
   </ItemGroup>
 
   <ItemGroup Label="Documents">

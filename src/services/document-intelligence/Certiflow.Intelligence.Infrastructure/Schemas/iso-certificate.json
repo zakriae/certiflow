@@ -1,0 +1,46 @@
+{
+  "documentType": "ISO 9001",
+  "schemaVersion": "iso-9001-v1",
+  "appliesTo": ["ISO 14001", "ISO 45001"],
+  "fields": [
+    {
+      "name": "holderName",
+      "valueType": "Text",
+      "isMandatory": true,
+      "entityMatch": "SupplierName"
+    },
+    {
+      "name": "issuerName",
+      "valueType": "Text",
+      "isMandatory": true,
+      "entityMatch": "AcceptedIssuer"
+    },
+    {
+      "name": "certificateNumber",
+      "valueType": "Text",
+      "isMandatory": true,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._/-]{3,49}$"
+    },
+    {
+      "name": "issuedOn",
+      "valueType": "Date",
+      "isMandatory": true
+    },
+    {
+      "name": "expiresOn",
+      "valueType": "Date",
+      "isMandatory": true
+    },
+    {
+      "name": "standard",
+      "valueType": "Enumeration",
+      "isMandatory": false,
+      "allowedValues": ["ISO 9001:2015", "ISO 14001:2015", "ISO 45001:2018"]
+    },
+    {
+      "name": "scope",
+      "valueType": "Text",
+      "isMandatory": false
+    }
+  ]
+}

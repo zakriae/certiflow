@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Where the vendor SDKs are allowed to live. Everything here implements a port declared in
+    Application, so the domain never sees Azure, OpenAI or PdfPig types.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Intelligence.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" />
+    <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.Intelligence.Application/Certiflow.Intelligence.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schemas/*.json" />
+  </ItemGroup>
+
+</Project>

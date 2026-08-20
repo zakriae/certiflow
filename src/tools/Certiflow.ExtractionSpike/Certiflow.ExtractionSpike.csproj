@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs the real extraction pipeline against the real seed corpus and prints what it found.
+    Not a test: it calls a paid model over the network, so it must never run in CI. It exists to
+    answer "does the differentiator actually work" with evidence rather than confidence.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Certiflow.ExtractionSpike</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" />
+    <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../services/document-intelligence/Certiflow.Intelligence.Infrastructure/Certiflow.Intelligence.Infrastructure.csproj" />
+    <ProjectReference Include="../Certiflow.SeedCorpus/Certiflow.SeedCorpus.csproj" />
+  </ItemGroup>
+
+</Project>

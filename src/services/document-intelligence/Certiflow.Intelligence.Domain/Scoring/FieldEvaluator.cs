@@ -144,6 +144,52 @@ public static class FieldEvaluator
     /// Parses to the declared type and returns a canonical string, or null if it does not parse.
     /// Dates come back as ISO-8601 so everything downstream compares like with like.
     /// </summary>
+    /// <summary>
+    /// Cultures whose long-form dates the corpus and the target market actually contain (NFR-16).
+    /// <para>
+    /// Needed because a certificate reading <c>26 septembre 2027</c> is a <em>correct</em> read.
+    /// The prompt asks the model to normalise dates to ISO, but a model that ignores that must not
+    /// cost the field its type-validity signal — that is a false negative, it drags the whole
+    /// document below the auto-accept threshold by the worst-field rule, and it charges a reviewer
+    /// for the model's formatting preference rather than for anything wrong with the certificate.
+    /// Found by running the pipeline against a real French certificate, which scored 0.50.
+    /// </para>
+    /// </summary>
+    private static readonly CultureInfo[] LongFormCultures =
+    [
+        CultureInfo.InvariantCulture,
+        new("en-GB"),
+        new("fr-FR"),
+    ];
+
+    /// <summary>Numeric formats first, then long-form month names in the supported languages.</summary>
+    private static bool TryParseDate(string value, out DateOnly date)
+    {
+        if (DateOnly.TryParseExact(
+                value, AcceptedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+        {
+            return true;
+        }
+
+        foreach (var culture in LongFormCultures)
+        {
+            // "d MMMM yyyy" and "MMMM d, yyyy" cover how the corpus renders dates in both
+            // languages; AllowWhiteSpaces absorbs the non-breaking spaces PDF text layers emit.
+            if (DateOnly.TryParseExact(
+                    value,
+                    ["d MMMM yyyy", "dd MMMM yyyy", "MMMM d, yyyy", "d MMM yyyy"],
+                    culture,
+                    DateTimeStyles.AllowWhiteSpaces,
+                    out date))
+            {
+                return true;
+            }
+        }
+
+        date = default;
+        return false;
+    }
+
     private static string? TryTypeValue(FieldDefinition definition, string rawValue)
     {
         var value = rawValue.Trim();
@@ -151,8 +197,7 @@ public static class FieldEvaluator
         switch (definition.ValueType)
         {
             case FieldValueType.Date:
-                return DateOnly.TryParseExact(
-                    value, AcceptedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                return TryParseDate(value, out var date)
                     ? date.ToString(DateFormat, CultureInfo.InvariantCulture)
                     : null;
 
