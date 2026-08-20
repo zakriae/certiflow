@@ -4,13 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Certiflow.Intelligence.Infrastructure.Persistence;
 
-public sealed class IntelligenceDbContext(DbContextOptions<IntelligenceDbContext> options) : DbContext(options)
+public sealed class IntelligenceDbContext(DbContextOptions<IntelligenceDbContext> options) : DbContext(options), IOutboxContext
 {
     public const string Schema = "intelligence";
 
     public DbSet<ExtractionJobRecord> ExtractionJobs => Set<ExtractionJobRecord>();
 
     public DbSet<InboxMessage> Inbox => Set<InboxMessage>();
+
+    public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

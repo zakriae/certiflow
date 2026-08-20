@@ -53,6 +53,19 @@ DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intell
 
 The worker needs `az login` — it calls Azure OpenAI with the keyless credential.
 
+### When a context gains a table
+
+The dev bootstrap creates a schema that is *missing*; it cannot evolve one that already exists.
+Add a table to a context whose schema is already there and nothing happens — until a query hits
+`Invalid object name` one table later. Until EF migrations exist, recreate the schema:
+
+```bash
+CERTIFLOW_RECREATE_SCHEMA=true DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intelligence/Certiflow.Intelligence.Worker
+```
+
+Safe because every byte of data here is generated (NFR-11). Real environments run EF migrations as
+a deploy step (NFR-19).
+
 Each service creates **its own schema** on startup in development, not the whole database.
 `EnsureCreated` cannot be used here: eight contexts share one database (SRS §13.1) and
 `EnsureCreated` is all-or-nothing *per database*, so the first service to start creates everything

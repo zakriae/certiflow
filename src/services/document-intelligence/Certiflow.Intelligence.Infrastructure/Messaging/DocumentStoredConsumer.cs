@@ -82,11 +82,29 @@ public sealed class DocumentStoredConsumer(
 
         var outcome = await pipeline.RunAsync(request, content, cancellationToken);
 
-        database.ExtractionJobs.Add(ExtractionJobRecord.FromDomain(outcome.Job, DateTimeOffset.UtcNow));
+        var now = DateTimeOffset.UtcNow;
+        var correlationId = context.CorrelationId ?? message.CorrelationId;
+
+        database.ExtractionJobs.Add(ExtractionJobRecord.FromDomain(outcome.Job, now));
+
+        // The outcome travels onward to Verification. Written to this service's own outbox in the
+        // same transaction as the job and the inbox row, so all three commit or none do - the same
+        // guarantee Intake makes, for the same reason.
+        database.Outbox.Add(ExtractionEventTranslator.ToOutboxMessage(
+            ExtractionEventTranslator.ToCompleted(outcome.Job, correlationId), now));
+
+        // A separate event when the model cited text that is not in the document. It is not a
+        // failure - the job completed - but it is the one outcome a reviewer must be told about
+        // explicitly rather than inferring from a low score (FR-3.4).
+        if (ExtractionEventTranslator.ToGroundingFailed(outcome.Job, correlationId) is { } groundingFailed)
+        {
+            database.Outbox.Add(ExtractionEventTranslator.ToOutboxMessage(groundingFailed, now));
+        }
+
         await RecordHandledAsync(messageId, cancellationToken);
 
-        // The job and the inbox row commit together. If they did not, a crash between them would
-        // either lose the extraction or let it run twice.
+        // Job, outbox and inbox commit together. If they did not, a crash between them would
+        // either lose the extraction, lose the event, or let the whole thing run twice.
         await database.SaveChangesAsync(cancellationToken);
 
         ConsumerLog.Extracted(

@@ -16,7 +16,7 @@ namespace Certiflow.Intake.Infrastructure.Persistence;
 /// (SRS §13.1, §19 Q7).
 /// </para>
 /// </summary>
-public sealed class IntakeDbContext(DbContextOptions<IntakeDbContext> options) : DbContext(options)
+public sealed class IntakeDbContext(DbContextOptions<IntakeDbContext> options) : DbContext(options), IOutboxContext
 {
     public const string Schema = "intake";
 

@@ -1,6 +1,6 @@
 using Certiflow.Intake.Application.Abstractions;
-using Certiflow.Intake.Infrastructure.Messaging;
 using Certiflow.Intake.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using Certiflow.Intake.Infrastructure.Storage;
 using Certiflow.SharedKernel;
 using Microsoft.EntityFrameworkCore;
@@ -80,7 +80,7 @@ public static class DependencyInjection
         });
 
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection(OutboxDispatcherOptions.SectionName));
-        services.AddHostedService<OutboxDispatcher>();
+        services.AddOutboxDispatcher<IntakeDbContext>();
 
         return services;
     }

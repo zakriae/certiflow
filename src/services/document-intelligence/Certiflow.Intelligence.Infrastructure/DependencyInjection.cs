@@ -7,6 +7,7 @@ using Certiflow.Intelligence.Infrastructure.Ai;
 using Certiflow.Intelligence.Infrastructure.Messaging;
 using Certiflow.Intelligence.Infrastructure.Parsing;
 using Certiflow.Intelligence.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using Certiflow.Intelligence.Infrastructure.Schemas;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -106,6 +107,9 @@ public static class DependencyInjection
                 configurator.ConfigureEndpoints(context);
             });
         });
+
+        services.Configure<OutboxDispatcherOptions>(configuration.GetSection(OutboxDispatcherOptions.SectionName));
+        services.AddOutboxDispatcher<IntelligenceDbContext>();
 
         return services;
     }

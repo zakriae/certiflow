@@ -1,7 +1,4 @@
 using System.Text.Json;
-using Certiflow.Contracts;
-using Certiflow.Intake.Infrastructure.Persistence;
-using Certiflow.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +6,17 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Certiflow.Intake.Infrastructure.Messaging;
+namespace Certiflow.Persistence;
+
+/// <summary>
+/// A <c>DbContext</c> that carries an outbox. Implemented by every publishing service's context.
+/// </summary>
+public interface IOutboxContext
+{
+    DbSet<OutboxMessage> Outbox { get; }
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+}
 
 public sealed class OutboxDispatcherOptions
 {
@@ -17,7 +24,7 @@ public sealed class OutboxDispatcherOptions
 
     /// <summary>
     /// How often to look for pending messages. Polling rather than a database notification
-    /// deliberately: it is one query on a filtered index, it works identically on SQL Server and
+    /// deliberately: it is one query on a filtered index, it behaves identically on SQL Server and
     /// Azure SQL, and it cannot miss a message the way a dropped notification can.
     /// </summary>
     public TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(2);
@@ -26,7 +33,7 @@ public sealed class OutboxDispatcherOptions
 
     /// <summary>
     /// After this many failures a message stops being retried and waits for a human. Without a
-    /// ceiling, one permanently unpublishable message is retried forever and buries every log.
+    /// ceiling, one permanently unpublishable message retries forever and buries every log.
     /// </summary>
     public int MaxAttempts { get; set; } = 10;
 }
@@ -40,15 +47,20 @@ public sealed class OutboxDispatcherOptions
 /// </para>
 /// <para>
 /// <b>Delivery is at-least-once and cannot be made exactly-once here.</b> If the process dies
-/// between publishing to the broker and marking the row published, the message is sent again on
-/// restart. That is not a bug to be fixed but a property to be handled: consumers deduplicate on
-/// <c>EventId</c>, which is why every integration event carries one (SRS §5.3, §19 Q6).
+/// between publishing to the broker and marking the row published, the message goes out again on
+/// restart. That is a property to handle, not a bug to fix: consumers deduplicate on the message
+/// id, which is why every integration event carries one (SRS §5.3, §19 Q6).
+/// </para>
+/// <para>
+/// Generic over the context because every publishing service needs exactly this and none of them
+/// needs it to differ.
 /// </para>
 /// </summary>
-public sealed class OutboxDispatcher(
+public sealed class OutboxDispatcher<TContext>(
     IServiceScopeFactory scopeFactory,
     IOptions<OutboxDispatcherOptions> options,
-    ILogger<OutboxDispatcher> logger) : BackgroundService
+    ILogger<OutboxDispatcher<TContext>> logger) : BackgroundService
+    where TContext : DbContext, IOutboxContext
 {
     private static readonly JsonSerializerOptions PayloadJson = new(JsonSerializerDefaults.Web);
 
@@ -64,9 +76,9 @@ public sealed class OutboxDispatcher(
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                // A failure here is the dispatcher's problem, not the message's. Swallowing it
-                // keeps the loop alive; letting it escape would stop the background service and
-                // silently strand every future event.
+                // A failure here is the dispatcher's problem, not the message's. Swallowing keeps
+                // the loop alive; letting it escape would stop the background service and silently
+                // strand every future event.
                 OutboxLog.CycleFailed(logger, exception);
             }
 
@@ -85,7 +97,7 @@ public sealed class OutboxDispatcher(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
 
-        var context = scope.ServiceProvider.GetRequiredService<IntakeDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<TContext>();
         var publisher = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
 
         var pending = await context.Outbox
@@ -103,18 +115,17 @@ public sealed class OutboxDispatcher(
         {
             try
             {
-                var contractType = Type.GetType($"{message.EventType}, {typeof(IIntegrationEvent).Assembly.GetName().Name}")
-                    ?? throw new InvalidOperationException($"Unknown integration event type '{message.EventType}'.");
+                var contractType = ResolveContractType(message.EventType);
 
                 var payload = JsonSerializer.Deserialize(message.PayloadJson, contractType, PayloadJson)
                     ?? throw new InvalidOperationException($"Outbox message {message.EventId} deserialised to null.");
 
                 // Published with the stored EventId as the transport MessageId, so a redelivery is
                 // recognisable as the same message rather than looking like a new one.
-                await publisher.Publish(payload, contractType, context =>
+                await publisher.Publish(payload, contractType, publishContext =>
                 {
-                    context.MessageId = message.EventId;
-                    context.CorrelationId = message.CorrelationId;
+                    publishContext.MessageId = message.EventId;
+                    publishContext.CorrelationId = message.CorrelationId;
                 }, cancellationToken);
 
                 message.MarkPublished(DateTimeOffset.UtcNow);
@@ -127,21 +138,47 @@ public sealed class OutboxDispatcher(
         }
 
         // Saved once per batch. A crash before this replays the whole batch, which is exactly the
-        // at-least-once behaviour the consumers are built for.
+        // at-least-once behaviour consumers are built for.
         await context.SaveChangesAsync(cancellationToken);
 
         OutboxLog.BatchDispatched(logger, pending.Count(m => m.PublishedAt is not null), pending.Count);
+    }
+
+    /// <summary>
+    /// Resolves a stored type name against the loaded assemblies.
+    /// <para>
+    /// Searched rather than assumed: the contracts assembly is the expected home, but a message
+    /// whose type has moved should fail with a clear error rather than a null reference three
+    /// frames later.
+    /// </para>
+    /// </summary>
+    private static Type ResolveContractType(string eventType) =>
+        AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.GetType(eventType, throwOnError: false))
+            .FirstOrDefault(type => type is not null)
+        ?? throw new InvalidOperationException($"Unknown integration event type '{eventType}'.");
+}
+
+/// <summary>Registration helper so each service wires the dispatcher in one line.</summary>
+public static class OutboxDispatcherRegistration
+{
+    public static IServiceCollection AddOutboxDispatcher<TContext>(this IServiceCollection services)
+        where TContext : DbContext, IOutboxContext
+    {
+        services.AddHostedService<OutboxDispatcher<TContext>>();
+
+        return services;
     }
 }
 
 internal static partial class OutboxLog
 {
-    [LoggerMessage(EventId = 2210, Level = LogLevel.Information, Message = "Outbox published {Published} of {Total} message(s)")]
+    [LoggerMessage(EventId = 9010, Level = LogLevel.Information, Message = "Outbox published {Published} of {Total} message(s)")]
     public static partial void BatchDispatched(ILogger logger, int published, int total);
 
-    [LoggerMessage(EventId = 2211, Level = LogLevel.Error, Message = "Outbox failed to publish {EventId} ({EventType}), attempt {Attempts}")]
+    [LoggerMessage(EventId = 9011, Level = LogLevel.Error, Message = "Outbox failed to publish {EventId} ({EventType}), attempt {Attempts}")]
     public static partial void PublishFailed(ILogger logger, Exception exception, Guid eventId, string eventType, int attempts);
 
-    [LoggerMessage(EventId = 2212, Level = LogLevel.Error, Message = "Outbox dispatch cycle failed")]
+    [LoggerMessage(EventId = 9012, Level = LogLevel.Error, Message = "Outbox dispatch cycle failed")]
     public static partial void CycleFailed(ILogger logger, Exception exception);
 }
