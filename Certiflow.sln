@@ -73,6 +73,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Verification.Api"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Http", "src\shared\Certiflow.Http\Certiflow.Http.csproj", "{0EC49ED1-3588-4E21-84F8-99C950E913CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Compliance.Infrastructure", "src\services\compliance\Certiflow.Compliance.Infrastructure\Certiflow.Compliance.Infrastructure.csproj", "{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Compliance.Api", "src\services\compliance\Certiflow.Compliance.Api\Certiflow.Compliance.Api.csproj", "{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -455,6 +459,30 @@ Global
 		{0EC49ED1-3588-4E21-84F8-99C950E913CD}.Release|x64.Build.0 = Release|Any CPU
 		{0EC49ED1-3588-4E21-84F8-99C950E913CD}.Release|x86.ActiveCfg = Release|Any CPU
 		{0EC49ED1-3588-4E21-84F8-99C950E913CD}.Release|x86.Build.0 = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|x64.Build.0 = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Debug|x86.Build.0 = Debug|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|x64.Build.0 = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|x86.ActiveCfg = Release|Any CPU
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC}.Release|x86.Build.0 = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|x64.Build.0 = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Debug|x86.Build.0 = Debug|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|x64.ActiveCfg = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|x64.Build.0 = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|x86.ActiveCfg = Release|Any CPU
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -491,5 +519,7 @@ Global
 		{4FA2CEC9-EC19-4383-9DDC-A63B2353307C} = {F0000001-0000-0000-0000-000000000002}
 		{8DD157EE-9E08-4D94-91E5-363BEDFCD8C1} = {F0000001-0000-0000-0000-000000000002}
 		{0EC49ED1-3588-4E21-84F8-99C950E913CD} = {F0000001-0000-0000-0000-000000000001}
+		{E7C03468-2795-4C6D-B9C5-E1DC8494E5CC} = {F0000001-0000-0000-0000-000000000002}
+		{C588A8D6-EF16-49F0-91BE-C20F49F2C4D7} = {F0000001-0000-0000-0000-000000000002}
 	EndGlobalSection
 EndGlobal

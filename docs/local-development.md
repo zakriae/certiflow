@@ -43,6 +43,16 @@ on a laptop. Management UI at http://localhost:15672 (guest/guest).
 
 ## Running the services
 
+Four services. Start compliance first the very first time, so it creates its schema before the
+others start publishing to it.
+
+| Service | Port |
+|---|---|
+| Document Intake | 5280 |
+| Verification | 5290 |
+| Compliance | 5300 |
+| Intelligence worker | (no HTTP) |
+
 ```bash
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5280 dotnet run --project src/services/document-intake/Certiflow.Intake.Api
 ```
@@ -51,7 +61,33 @@ ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5280 dotnet 
 DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intelligence/Certiflow.Intelligence.Worker
 ```
 
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5290 dotnet run --project src/services/verification/Certiflow.Verification.Api
+```
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5300 dotnet run --project src/services/compliance/Certiflow.Compliance.Api
+```
+
 The worker needs `az login` — it calls Azure OpenAI with the keyless credential.
+
+## The full chain
+
+Compliance needs a supplier and a published profile before any document means anything. Until BC1
+exists, the registry-sync endpoints stand in for its events — they call the same handlers the
+consumers do, so the seeded path and the event path cannot diverge.
+
+```bash
+curl -X POST http://localhost:5300/api/registry-sync/profiles -H "Content-Type: application/json" -d '{"categoryId":"dddd1111-eeee-2222-ffff-333344445555","profileVersion":1,"requirements":[{"requirementId":"9999aaaa-8888-bbbb-7777-cccc66665555","documentType":"ISO 9001","isMandatory":true,"renewalLeadTimeDays":60,"minValidityDays":30}]}'
+```
+
+```bash
+curl -X POST http://localhost:5300/api/registry-sync/suppliers -H "Content-Type: application/json" -d '{"supplierId":"aaaa1111-bbbb-2222-cccc-333344445555","categoryId":"dddd1111-eeee-2222-ffff-333344445555"}'
+```
+
+Then upload against that supplier and requirement, resolve the fields, approve, and watch the
+status walk `NonCompliant → Pending → Compliant` on
+`GET /api/suppliers/{id}/compliance`. Nothing touches a database directly at any point.
 
 ### When a context gains a table
 
