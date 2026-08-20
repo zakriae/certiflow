@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Intake.Api</RootNamespace>
+    <UserSecretsId>certiflow-intake-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.Intake.Application/Certiflow.Intake.Application.csproj" />
+    <ProjectReference Include="../Certiflow.Intake.Infrastructure/Certiflow.Intake.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

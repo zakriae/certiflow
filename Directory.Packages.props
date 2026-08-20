@@ -27,6 +27,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup Label="AI">
@@ -43,6 +44,17 @@
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
     <!-- Keyless auth: DefaultAzureCredential, so no API key exists to leak (NFR-9). -->
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Persistence and storage">
+    <!--
+      EF Core 9.x, not 10.x: the 10 line targets net10.0 and every service here targets net9.0
+      per SRS §5.1. Unlike the Microsoft.Extensions abstractions, EF Core ships no netstandard2.0
+      asset to fall back to.
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.19" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.19" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.1" />
   </ItemGroup>
 
   <ItemGroup Label="Documents">
