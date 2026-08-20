@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Verification.Api</RootNamespace>
+    <UserSecretsId>certiflow-verification-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Http/Certiflow.Http.csproj" />
+    <ProjectReference Include="../Certiflow.Verification.Application/Certiflow.Verification.Application.csproj" />
+    <ProjectReference Include="../Certiflow.Verification.Infrastructure/Certiflow.Verification.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

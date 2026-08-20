@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Verification.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.Verification.Application/Certiflow.Verification.Application.csproj" />
+    <!-- Contracts referenced here only: integration events are translated at this boundary. -->
+    <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

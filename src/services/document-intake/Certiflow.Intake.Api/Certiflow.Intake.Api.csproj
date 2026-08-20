@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Http/Certiflow.Http.csproj" />
     <ProjectReference Include="../Certiflow.Intake.Application/Certiflow.Intake.Application.csproj" />
     <ProjectReference Include="../Certiflow.Intake.Infrastructure/Certiflow.Intake.Infrastructure.csproj" />
   </ItemGroup>

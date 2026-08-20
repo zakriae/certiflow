@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Shared HTTP plumbing: exception-to-Problem-Details mapping, identical in every API.
+    Like Certiflow.Persistence this is Infrastructure, not domain - it may reference ASP.NET, and
+    it may never hold a business concept.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Http</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.SharedKernel/Certiflow.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

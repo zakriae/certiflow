@@ -1,3 +1,4 @@
+using Certiflow.Http;
 using System.Reflection;
 using Certiflow.Intake.Application.Upload;
 using Certiflow.Intake.Infrastructure;
@@ -18,7 +19,7 @@ builder.Services.AddMediatR(configuration =>
 builder.Services.AddValidatorsFromAssembly(typeof(UploadDocumentCommand).Assembly);
 builder.Services.AddIntakeInfrastructure(builder.Configuration);
 builder.Services.AddIntakeMessaging(builder.Configuration);
-builder.Services.AddProblemDetails();
+builder.Services.AddCertiflowProblemDetails();
 
 // Guardrail G4's 20 MB ceiling, enforced at the transport as well as in the aggregate. Without
 // this the server buffers the whole body before the domain ever gets to reject it, which turns a
