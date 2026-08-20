@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.SeedCorpus.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PdfPig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/tools/Certiflow.SeedCorpus/Certiflow.SeedCorpus.csproj" />
+    <!--
+      Referenced on purpose: the point of these tests is that the *real* grounding verifier can
+      locate the seeded values in the generated PDFs. Asserting against a reimplementation of the
+      matching rules would prove only that the reimplementation agrees with itself.
+    -->
+    <ProjectReference Include="../../src/services/document-intelligence/Certiflow.Intelligence.Domain/Certiflow.Intelligence.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

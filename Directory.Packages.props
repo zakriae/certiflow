@@ -22,6 +22,23 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.19" />
   </ItemGroup>
 
+  <ItemGroup Label="Documents">
+    <!--
+      QuestPDF is dual-licensed. The Community licence is free below $1M annual revenue and must
+      be selected explicitly in code (QuestPDF.Settings.License), which the generator does and
+      says why. Used twice in this project: generating the synthetic demo corpus, and generating
+      compliance report PDFs.
+    -->
+    <PackageVersion Include="QuestPDF" Version="2026.7.3" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
+    <!--
+      PdfPig extracts PDF text *with page numbers*, which is what makes citation grounding
+      verifiable rather than decorative. Here it is a test dependency: it proves the generated
+      corpus has a text layer the extraction pipeline can actually read.
+    -->
+    <PackageVersion Include="PdfPig" Version="0.1.15" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A build-time tool, not a service. It produces the synthetic demo corpus of SRS §16.1 and is
+    never deployed. NFR-11 is absolute: no real supplier or personal data ever enters this project,
+    which is exactly why every name, address and certificate number here is generated.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Certiflow.SeedCorpus</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QuestPDF" />
+    <PackageReference Include="Bogus" />
+  </ItemGroup>
+
+</Project>
