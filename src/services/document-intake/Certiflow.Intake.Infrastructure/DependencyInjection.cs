@@ -1,9 +1,11 @@
 using Certiflow.Intake.Application.Abstractions;
+using Certiflow.Intake.Infrastructure.Messaging;
 using Certiflow.Intake.Infrastructure.Persistence;
 using Certiflow.Intake.Infrastructure.Storage;
 using Certiflow.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Certiflow.Intake.Infrastructure;
@@ -37,6 +39,48 @@ public static class DependencyInjection
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IUnitOfWork, OutboxUnitOfWork>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Publishing side only - Intake consumes nothing. RabbitMQ locally, Azure Service Bus when a
+    /// connection string is present; the outbox dispatcher is transport-agnostic either way.
+    /// </summary>
+    public static IServiceCollection AddIntakeMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var serviceBus = configuration.GetConnectionString("ServiceBus");
+
+        services.AddMassTransit(bus =>
+        {
+            bus.SetKebabCaseEndpointNameFormatter();
+
+            if (!string.IsNullOrWhiteSpace(serviceBus))
+            {
+                bus.UsingAzureServiceBus((context, configurator) =>
+                {
+                    configurator.Host(serviceBus);
+                    configurator.ConfigureEndpoints(context);
+                });
+
+                return;
+            }
+
+            bus.UsingRabbitMq((context, configurator) =>
+            {
+                configurator.Host(
+                    configuration.GetConnectionString("RabbitMq") ?? "amqp://guest:guest@localhost:5672");
+
+                configurator.ConfigureEndpoints(context);
+            });
+        });
+
+        services.Configure<OutboxDispatcherOptions>(configuration.GetSection(OutboxDispatcherOptions.SectionName));
+        services.AddHostedService<OutboxDispatcher>();
 
         return services;
     }

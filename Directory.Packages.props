@@ -28,6 +28,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup Label="AI">
@@ -44,6 +46,18 @@
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
     <!-- Keyless auth: DefaultAzureCredential, so no API key exists to leak (NFR-9). -->
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Messaging">
+    <!--
+      MassTransit pinned to 8.5.10, the last Apache-2.0 release. Version 9 moved to a paid
+      commercial licence (massient.com/license). This is the third dependency in this solution
+      where the newest version is not the right one - see also MediatR 12.4.1 and
+      FluentAssertions 6.12.2. Worth knowing before inheriting a build that needs paid seats.
+    -->
+    <PackageVersion Include="MassTransit" Version="8.5.10" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.10" />
+    <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.10" />
   </ItemGroup>
 
   <ItemGroup Label="Persistence and storage">

@@ -13,12 +13,21 @@
     <PackageReference Include="Azure.AI.OpenAI" />
     <PackageReference Include="Azure.Identity" />
     <PackageReference Include="PdfPig" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Certiflow.Intelligence.Application/Certiflow.Intelligence.Application.csproj" />
+    <!-- Contracts referenced here only: integration events are translated at this boundary. -->
+    <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

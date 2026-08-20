@@ -16,6 +16,7 @@ builder.Services.AddMediatR(configuration =>
 
 builder.Services.AddValidatorsFromAssembly(typeof(UploadDocumentCommand).Assembly);
 builder.Services.AddIntakeInfrastructure(builder.Configuration);
+builder.Services.AddIntakeMessaging(builder.Configuration);
 builder.Services.AddProblemDetails();
 
 // Guardrail G4's 20 MB ceiling, enforced at the transport as well as in the aggregate. Without
@@ -28,13 +29,14 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
-// Development convenience only. Real environments migrate as a deploy step, because letting a
-// scaled-out service race to alter its own schema on startup is how a deployment corrupts one.
+// Creates this context's own schema, not the whole database. EnsureCreated cannot be used: eight
+// contexts share one database (SRS §13.1) and it is all-or-nothing per database, so whichever
+// service starts second silently creates nothing. Real environments migrate as a deploy step.
 if (app.Environment.IsDevelopment())
 {
     await using var scope = app.Services.CreateAsyncScope();
     var context = scope.ServiceProvider.GetRequiredService<IntakeDbContext>();
-    await context.Database.EnsureCreatedAsync();
+    await context.EnsureSchemaAsync(IntakeDbContext.Schema);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "intake" }));

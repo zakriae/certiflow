@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Intake.Infrastruc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Intake.Api", "src\services\document-intake\Certiflow.Intake.Api\Certiflow.Intake.Api.csproj", "{A96574A7-4C9E-401F-86A9-5931112B7E7D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Certiflow.Intelligence.Worker", "src\services\document-intelligence\Certiflow.Intelligence.Worker\Certiflow.Intelligence.Worker.csproj", "{E6536183-5564-4302-AC12-A998AD93A3FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -371,6 +373,18 @@ Global
 		{A96574A7-4C9E-401F-86A9-5931112B7E7D}.Release|x64.Build.0 = Release|Any CPU
 		{A96574A7-4C9E-401F-86A9-5931112B7E7D}.Release|x86.ActiveCfg = Release|Any CPU
 		{A96574A7-4C9E-401F-86A9-5931112B7E7D}.Release|x86.Build.0 = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|x64.Build.0 = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Debug|x86.Build.0 = Debug|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|x64.ActiveCfg = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|x64.Build.0 = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|x86.ActiveCfg = Release|Any CPU
+		{E6536183-5564-4302-AC12-A998AD93A3FB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -401,5 +415,6 @@ Global
 		{CA388A0C-B639-443A-A8D9-FA330B1C49EE} = {F0000001-0000-0000-0000-000000000002}
 		{7C48BD98-65FA-4E6B-B91E-09C9FAFC033D} = {F0000001-0000-0000-0000-000000000002}
 		{A96574A7-4C9E-401F-86A9-5931112B7E7D} = {F0000001-0000-0000-0000-000000000002}
+		{E6536183-5564-4302-AC12-A998AD93A3FB} = {F0000001-0000-0000-0000-000000000002}
 	EndGlobalSection
 EndGlobal
