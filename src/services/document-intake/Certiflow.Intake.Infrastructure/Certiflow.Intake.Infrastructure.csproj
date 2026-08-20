@@ -28,6 +28,7 @@
     <!-- Contracts are referenced here and only here: integration events are translated at this
          boundary, never spoken by the domain or the application layer (ADR-0004). -->
     <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

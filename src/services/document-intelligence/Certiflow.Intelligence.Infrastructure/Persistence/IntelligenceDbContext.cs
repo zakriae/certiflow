@@ -1,42 +1,8 @@
+using Certiflow.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Certiflow.Intelligence.Infrastructure.Persistence;
-
-/// <summary>
-/// A message this service has already handled.
-/// <para>
-/// <b>The inbox — the other half of at-least-once delivery.</b> The outbox guarantees an event is
-/// published even if the publisher crashes, which means it can be published <em>twice</em>. This
-/// table is how the consumer stays correct when that happens: the message id is inserted in the
-/// same transaction as the work it authorised, so replaying a message finds the row and does
-/// nothing (SRS §5.3, §19 Q6).
-/// </para>
-/// <para>
-/// Note what it is not: a lock, a cache, or a queue. It is a record of "this exact message has been
-/// dealt with", keyed on the publisher's own event id.
-/// </para>
-/// </summary>
-public sealed class InboxMessage
-{
-    private InboxMessage()
-    {
-        MessageType = null!;
-    }
-
-    public InboxMessage(Guid messageId, string messageType, DateTimeOffset receivedAt)
-    {
-        MessageId = messageId;
-        MessageType = messageType;
-        ReceivedAt = receivedAt;
-    }
-
-    public Guid MessageId { get; private set; }
-
-    public string MessageType { get; private set; }
-
-    public DateTimeOffset ReceivedAt { get; private set; }
-}
 
 public sealed class IntelligenceDbContext(DbContextOptions<IntelligenceDbContext> options) : DbContext(options)
 {
@@ -52,7 +18,7 @@ public sealed class IntelligenceDbContext(DbContextOptions<IntelligenceDbContext
 
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfiguration(new ExtractionJobConfiguration());
-        modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
+        modelBuilder.AddMessagingTables();
     }
 }
 
@@ -86,22 +52,5 @@ internal sealed class ExtractionJobConfiguration : IEntityTypeConfiguration<Extr
         builder.Property(j => j.FieldsJson).HasColumnName("fields_json").HasColumnType("nvarchar(max)").IsRequired();
 
         builder.HasIndex(j => j.DocumentId).HasDatabaseName("ix_extraction_jobs_document");
-    }
-}
-
-internal sealed class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
-{
-    public void Configure(EntityTypeBuilder<InboxMessage> builder)
-    {
-        builder.ToTable("inbox");
-
-        // The primary key *is* the deduplication. A replayed message fails to insert rather than
-        // relying on a prior read having seen it, which closes the race between two consumers
-        // handling the same redelivery at once.
-        builder.HasKey(m => m.MessageId);
-
-        builder.Property(m => m.MessageId).HasColumnName("message_id").ValueGeneratedNever();
-        builder.Property(m => m.MessageType).HasColumnName("message_type").HasMaxLength(300).IsRequired();
-        builder.Property(m => m.ReceivedAt).HasColumnName("received_at");
     }
 }

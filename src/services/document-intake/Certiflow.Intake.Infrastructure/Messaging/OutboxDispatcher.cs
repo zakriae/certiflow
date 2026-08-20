@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Certiflow.Contracts;
 using Certiflow.Intake.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

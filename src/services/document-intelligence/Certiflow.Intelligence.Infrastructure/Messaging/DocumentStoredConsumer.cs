@@ -5,6 +5,7 @@ using Certiflow.Intelligence.Application.Extraction;
 using Certiflow.Intelligence.Domain;
 using Certiflow.Intelligence.Domain.Scoring;
 using Certiflow.Intelligence.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

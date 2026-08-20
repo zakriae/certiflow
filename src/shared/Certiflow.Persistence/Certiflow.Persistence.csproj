@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Infrastructure plumbing shared by every service: the outbox, the inbox, and development schema
+    creation. Unlike Certiflow.SharedKernel this *may* reference EF Core — it is an Infrastructure
+    concern, not a domain one.
+    What it may never hold is a business concept. Sharing "how a message is stored" couples nothing
+    that matters; sharing "what a Supplier is" would make eight services one. An architecture test
+    enforces that distinction, exactly as it does for the shared kernel (ADR-0004).
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Persistence</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+
+</Project>

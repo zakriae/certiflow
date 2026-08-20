@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Certiflow.Intelligence.Infrastructure.Persistence;
+namespace Certiflow.Persistence;
 
 /// <summary>
 /// Creates this context's tables in development.
@@ -12,7 +12,7 @@ namespace Certiflow.Intelligence.Infrastructure.Persistence;
 /// schema each (SRS §13.1), and <c>EnsureCreated</c> is all-or-nothing <em>per database</em>: the
 /// first service to start creates the database and its own tables, and every context after it
 /// finds the database already present and creates nothing at all. The failure is silent until a
-/// consumer hits "Invalid object name 'intelligence.inbox'" at runtime — which is exactly how it
+/// consumer hits "Invalid object name '<schema>.<table>'" at runtime — which is exactly how it
 /// was found.
 /// </para>
 /// <para>

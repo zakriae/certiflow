@@ -1,5 +1,6 @@
 using Certiflow.Intelligence.Infrastructure;
 using Certiflow.Intelligence.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

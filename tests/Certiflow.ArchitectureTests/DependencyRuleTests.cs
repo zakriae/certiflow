@@ -235,6 +235,43 @@ public sealed class DependencyRuleTests
     }
 
     [Fact]
+    public void The_shared_persistence_plumbing_contains_no_business_concepts()
+    {
+        // Certiflow.Persistence may reference EF Core - it is Infrastructure, not domain. What it
+        // may never hold is a business concept. Sharing "how a message is stored" couples nothing
+        // that matters; sharing "what a Supplier is" would make eight services one (ADR-0004).
+        string[] businessWords =
+        [
+            "Supplier", "Document", "Certificate", "Compliance", "Requirement", "Obligation",
+            "Extraction", "Review", "Verdict", "Audit", "Evidence", "Validity",
+        ];
+
+        var offenders = typeof(Persistence.OutboxMessage).Assembly
+            .GetTypes()
+            .Where(t => businessWords.Any(word => t.Name.Contains(word, StringComparison.Ordinal)))
+            .Select(t => t.FullName ?? t.Name)
+            .ToList();
+
+        offenders.Should().BeEmpty(
+            "Certiflow.Persistence must stay plumbing, but found: {0}", string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void The_shared_persistence_plumbing_does_not_reference_any_bounded_context()
+    {
+        // It is referenced by every service, so a dependency here is a dependency everywhere.
+        var referenced = typeof(Persistence.OutboxMessage).Assembly
+            .GetReferencedAssemblies()
+            .Select(a => a.Name ?? string.Empty)
+            .Where(name => name.StartsWith("Certiflow.", StringComparison.Ordinal))
+            .ToList();
+
+        referenced.Should().BeEmpty(
+            "Certiflow.Persistence must not depend on any context, but references: {0}",
+            string.Join(", ", referenced));
+    }
+
+    [Fact]
     public void The_integration_contracts_reference_nothing_of_ours()
     {
         // Not even the shared kernel (SRS §5.3). This assembly is consumed by every service and, in a

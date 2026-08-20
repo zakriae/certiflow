@@ -1,4 +1,5 @@
 using Certiflow.Intake.Domain;
+using Certiflow.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,7 +30,7 @@ public sealed class IntakeDbContext(DbContextOptions<IntakeDbContext> options) :
 
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfiguration(new DocumentConfiguration());
-        modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+        modelBuilder.AddMessagingTables();
     }
 }
 
@@ -102,29 +103,5 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(d => new { d.SupplierId, d.RequirementId }).HasDatabaseName("ix_documents_supplier_requirement");
 
         builder.Ignore(d => d.DomainEvents);
-    }
-}
-
-internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
-{
-    public void Configure(EntityTypeBuilder<OutboxMessage> builder)
-    {
-        builder.ToTable("outbox");
-        builder.HasKey(m => m.EventId);
-
-        builder.Property(m => m.EventId).HasColumnName("event_id").ValueGeneratedNever();
-        builder.Property(m => m.CorrelationId).HasColumnName("correlation_id");
-        builder.Property(m => m.EventType).HasColumnName("event_type").HasMaxLength(300).IsRequired();
-        builder.Property(m => m.PayloadJson).HasColumnName("payload_json").IsRequired();
-        builder.Property(m => m.OccurredAt).HasColumnName("occurred_at");
-        builder.Property(m => m.PublishedAt).HasColumnName("published_at");
-        builder.Property(m => m.PublishAttempts).HasColumnName("publish_attempts");
-        builder.Property(m => m.LastError).HasColumnName("last_error").HasMaxLength(2000);
-
-        // The dispatcher only ever asks for unpublished messages in order, so the index covers
-        // exactly that query and ignores the rows that have already gone out.
-        builder.HasIndex(m => m.OccurredAt)
-            .HasDatabaseName("ix_outbox_pending")
-            .HasFilter("[published_at] IS NULL");
     }
 }

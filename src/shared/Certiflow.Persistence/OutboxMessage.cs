@@ -1,4 +1,4 @@
-namespace Certiflow.Intake.Infrastructure.Persistence;
+namespace Certiflow.Persistence;
 
 /// <summary>
 /// An integration event waiting to be published.

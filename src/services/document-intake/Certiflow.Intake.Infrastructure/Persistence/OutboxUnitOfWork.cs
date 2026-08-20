@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Certiflow.Intake.Application.Abstractions;
 using Certiflow.Intake.Domain;
+using Certiflow.Persistence;
 using Certiflow.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Contracts = Certiflow.Contracts;

@@ -2,6 +2,7 @@ using System.Reflection;
 using Certiflow.Intake.Application.Upload;
 using Certiflow.Intake.Infrastructure;
 using Certiflow.Intake.Infrastructure.Persistence;
+using Certiflow.Persistence;
 using Certiflow.SharedKernel;
 using FluentValidation;
 using MediatR;
