@@ -2,6 +2,7 @@ using Certiflow.Http;
 using System.Reflection;
 using Certiflow.Intake.Application.Upload;
 using Certiflow.Intake.Infrastructure;
+using Certiflow.Intake.Application.Abstractions;
 using Certiflow.Intake.Infrastructure.Persistence;
 using Certiflow.Persistence;
 using Certiflow.SharedKernel;
@@ -99,6 +100,34 @@ app.MapGet("/api/documents/{id:guid}", async (
             document.UploadedBy,
             document.UploadedAt,
         });
+});
+
+// ── Serving a document to a reviewer (FR-2.5, NFR-10) ───────────────────────────────────────────
+// Returns a short-lived SAS URL rather than the bytes. Streaming through the API would be simpler
+// and would sidestep CORS entirely, but it would also mean every page of every document flowing
+// through a container that scales on queue depth - and it would quietly drop the guarantee that a
+// document is only ever reachable by a link that expires.
+app.MapGet("/api/documents/{id:guid}/link", async (
+    Guid id,
+    IntakeDbContext context,
+    IDocumentBlobStore blobStore,
+    CancellationToken cancellationToken) =>
+{
+    var document = await context.Documents
+        .AsNoTracking()
+        .FirstOrDefaultAsync(d => d.Id == new Certiflow.Intake.Domain.DocumentId(id), cancellationToken);
+
+    if (document?.StorageReference is null)
+    {
+        return Results.NotFound();
+    }
+
+    // Fifteen minutes: long enough to read a certificate, short enough that a URL pasted into a
+    // chat window is useless by the time anyone clicks it.
+    var lifetime = TimeSpan.FromMinutes(15);
+    var url = await blobStore.CreateReadUrlAsync(document.StorageReference, lifetime, cancellationToken);
+
+    return Results.Ok(new { url, expiresInSeconds = (int)lifetime.TotalSeconds, document.FileName });
 });
 
 // Visible so the outbox can be inspected while the dispatcher is being built. This is a

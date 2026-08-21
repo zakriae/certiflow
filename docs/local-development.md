@@ -160,3 +160,30 @@ auto-accept.
 ```bash
 docker rm -f certiflow-sql certiflow-azurite
 ```
+
+## Running the front end
+
+Node 22 is required (`.nvmrc`); the system Node is not touched.
+
+```bash
+cd src/web/certiflow-web && nvm use && npm install && npm start
+```
+
+The dev server proxies `/api/*` to the five services (`proxy.conf.json`) so the SPA talks to one
+origin. **A YARP gateway replaces this proxy when deployed** — the proxy is a dev convenience, not
+the architecture.
+
+### Azurite needs CORS for the PDF viewer
+
+Documents are served as short-lived SAS URLs (FR-2.5), so the browser fetches them straight from
+storage. Azurite sends no CORS headers by default and the viewer fails with an opaque
+"Failed to fetch":
+
+```bash
+az storage cors add --services b --methods GET HEAD OPTIONS --origins "http://localhost:4200" --allowed-headers "*" --exposed-headers "*" --max-age 3600 --connection-string "UseDevelopmentStorage=true"
+```
+
+Real Azure Storage needs the same rule for whatever origin serves the SPA. Streaming the bytes
+through the API instead would dodge CORS entirely, but it would put every page of every document
+through a container that scales on queue depth, and drop the guarantee that a document is only
+reachable by a link that expires.

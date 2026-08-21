@@ -51,3 +51,6 @@ appsettings.*.local.json
 
 # Aspire
 .aspire/
+
+# Editor launch config for the preview tooling - not part of the product.
+.claude/

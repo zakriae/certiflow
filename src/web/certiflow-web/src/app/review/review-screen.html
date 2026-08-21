@@ -1,0 +1,141 @@
+<div class="review">
+  <header class="review__header">
+    <div>
+      <h1>Review queue</h1>
+      <p class="muted">{{ queue().length }} open task(s)</p>
+    </div>
+
+    @if (task(); as t) {
+      <div class="verdict-bar">
+        <span class="chip chip--{{ confidenceBand(t.overallConfidence) }}">
+          confidence {{ t.overallConfidence | number: '1.2-2' }}
+        </span>
+        <span class="chip">{{ t.raisedReason }}</span>
+        <span class="chip">{{ t.status }}</span>
+
+        @if (mandatoryOutstanding() > 0) {
+          <span class="chip chip--warn">{{ mandatoryOutstanding() }} field(s) to resolve</span>
+        }
+
+        <button type="button" class="btn btn--primary" [disabled]="!canApprove() || busy()" (click)="approve()">
+          Approve
+        </button>
+        <button type="button" class="btn" [disabled]="busy() || t.status === 'Completed'" (click)="reject()">
+          Reject
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <div class="review__body">
+    <!-- The document. Its page follows whichever field is selected (FR-4.3). -->
+    <section class="pane pane--document" aria-label="Document preview">
+      @if (documentUrl(); as url) {
+        <ngx-extended-pdf-viewer
+          [src]="url"
+          [page]="page()"
+          [height]="'100%'"
+          [showToolbar]="true"
+          [showSidebarButton]="false"
+          [showOpenFileButton]="false"
+          [showPrintButton]="false"
+          [showDownloadButton]="false"
+          [textLayer]="true" />
+      } @else {
+        <p class="muted pane__empty">Select a task to see its document.</p>
+      }
+    </section>
+
+    <section class="pane pane--fields" aria-label="Extracted fields">
+      @if (task(); as t) {
+        <table class="fields">
+          <thead>
+            <tr>
+              <th scope="col">Field</th>
+              <th scope="col">Confidence</th>
+              <th scope="col">Value</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (field of t.fields; track field.fieldName) {
+              <tr
+                class="fields__row"
+                [class.fields__row--selected]="selectedField() === field.fieldName"
+                [class.fields__row--resolved]="field.acceptedValue !== null">
+                <th scope="row">
+                  <!-- Clicking the field is what moves the preview. The citation snippet sits under
+                       the name so the reviewer sees the claim without leaving the row. -->
+                  <button type="button" class="link" (click)="selectField(field)">
+                    {{ field.fieldName }}
+                    @if (field.isMandatory) { <span class="req" title="Mandatory">*</span> }
+                  </button>
+
+                  @if (field.citation; as citation) {
+                    <span class="cite">p{{ citation.page }} &middot; &ldquo;{{ citation.snippet }}&rdquo;</span>
+                  } @else {
+                    <span class="cite cite--none">no citation &mdash; ungrounded</span>
+                  }
+
+                  @if (field.scoringNote) { <span class="note">{{ field.scoringNote }}</span> }
+                </th>
+
+                <td>
+                  <span class="chip chip--{{ confidenceBand(field.confidence) }}">
+                    {{ field.confidence | number: '1.2-2' }}
+                  </span>
+                </td>
+
+                <td>
+                  <input
+                    class="value"
+                    type="text"
+                    [value]="editValue(field.fieldName)"
+                    (input)="onEdit(field.fieldName, $any($event.target).value)"
+                    [attr.aria-label]="field.fieldName + ' value'" />
+
+                  @if (field.wasCorrected) {
+                    <span class="note">was &ldquo;{{ field.suggestedValue }}&rdquo;</span>
+                  }
+                </td>
+
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn--small"
+                    [disabled]="busy() || t.status === 'Completed'"
+                    (click)="resolve(field)">
+                    {{ field.acceptedValue ? 'Update' : 'Accept' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        <p class="muted uploaded-by">Uploaded by {{ t.uploadedBy }}</p>
+      } @else {
+        <p class="muted pane__empty">No task selected.</p>
+      }
+    </section>
+  </div>
+
+  <footer class="queue">
+    @for (item of queue(); track item.reviewTaskId) {
+      <button
+        type="button"
+        class="queue__item"
+        [class.queue__item--active]="task()?.reviewTaskId === item.reviewTaskId"
+        (click)="open(item.reviewTaskId)">
+        {{ item.documentType }}
+        <span class="chip chip--{{ confidenceBand(item.overallConfidence) }}">
+          {{ item.overallConfidence | number: '1.2-2' }}
+        </span>
+      </button>
+    }
+  </footer>
+</div>
