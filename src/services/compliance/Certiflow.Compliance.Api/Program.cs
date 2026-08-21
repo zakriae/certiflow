@@ -86,16 +86,40 @@ app.MapGet("/api/dashboard", async (
 app.MapGet("/api/suppliers/{id:guid}/compliance", async (
     Guid id,
     ComplianceDbContext database,
+    ComplianceStateLoader loader,
+    IUnitOfWork unitOfWork,
     IClock clock,
     CancellationToken cancellationToken) =>
 {
-    var state = await database.SupplierCompliance
-        .AsNoTracking()
-        .FirstOrDefaultAsync(s => s.Id == new SupplierId(id), cancellationToken);
+    // Tracked, and reconciled through the loader rather than queried directly.
+    //
+    // ComplianceStateLoader exists because SupplierRegistered and ComplianceProfileVersionPublished
+    // race: interleave them and the supplier ends up holding no obligations and reading as
+    // vacuously Pending. The loader heals that on the next load - but wiring only the command
+    // handlers through it left the read path healing nothing, which meant the single screen a human
+    // actually looks at was the one place the self-healing did not reach. Seen live: a supplier with
+    // a mandatory ISO 9001 obligation reported "Pending, no obligations" indefinitely.
+    //
+    // So a GET can write. That is a real cost and it is worth it: the alternative is a page that
+    // reports an answer the system knows to be wrong. The write is idempotent - the aggregate
+    // ignores a profile version it already holds - so concurrent reads converge rather than fight,
+    // and a reconciliation that changes nothing saves nothing.
+    SupplierComplianceState state;
 
-    if (state is null)
+    try
+    {
+        state = await loader.LoadAsync(new SupplierId(id), cancellationToken);
+    }
+    catch (SupplierComplianceStateNotFoundException)
     {
         return Results.NotFound();
+    }
+
+    // Reconciliation raises domain events when it actually applied something, so this is also the
+    // test for "did anything change" - a no-op reconcile leaves the list empty and saves nothing.
+    if (state.DomainEvents.Count != 0)
+    {
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     var today = clock.Today;
