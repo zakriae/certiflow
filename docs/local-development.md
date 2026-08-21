@@ -43,14 +43,17 @@ on a laptop. Management UI at http://localhost:15672 (guest/guest).
 
 ## Running the services
 
-Four services. Start compliance first the very first time, so it creates its schema before the
-others start publishing to it.
+Six services. Start order does not matter — each creates its own schema, and the compliance state
+reconciles itself on read if the profile and the supplier arrive out of order (ADR-0005 covers the
+related delivery hazard).
 
 | Service | Port |
 |---|---|
+| Supplier Registry | 5270 |
 | Document Intake | 5280 |
 | Verification | 5290 |
 | Compliance | 5300 |
+| Audit Trail | 5310 |
 | Intelligence worker | (no HTTP) |
 
 ```bash
@@ -67,6 +70,14 @@ ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5290 dotnet 
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5300 dotnet run --project src/services/compliance/Certiflow.Compliance.Api
+```
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5310 dotnet run --project src/services/audit-trail/Certiflow.Audit.Api
+```
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5270 dotnet run --project src/services/supplier-registry/Certiflow.SupplierRegistry.Api
 ```
 
 The worker needs `az login` — it calls Azure OpenAI with the keyless credential.
@@ -187,3 +198,51 @@ Real Azure Storage needs the same rule for whatever origin serves the SPA. Strea
 through the API instead would dodge CORS entirely, but it would put every page of every document
 through a container that scales on queue depth, and drop the guarantee that a document is only
 reachable by a link that expires.
+
+## The audit trail and the tamper test
+
+Every service publishes into Audit, which appends one hash-chained entry per event (ADR-0003). The
+ledger is the answer to "who did what, and can you prove it wasn't changed afterwards".
+
+Drive one document through the whole chain first — publish a profile, register a supplier, upload,
+resolve the fields, approve — then:
+
+```bash
+curl -s http://localhost:5310/api/audit
+```
+
+Ten entries for one certificate. Two of them carry a person's name: `DocumentStored` is the
+uploader, `DocumentApproved` is the reviewer, and the segregation-of-duties rule guarantees they are
+different people.
+
+```bash
+curl -s http://localhost:5310/api/audit/verify-chain
+```
+
+`isValid: true`, ten entries verified. Then break it — this endpoint runs a raw `UPDATE` against the
+table, exactly as someone with database access would, and is compiled only in Development:
+
+```bash
+curl -s -X POST http://localhost:5310/api/audit/_tamper
+```
+
+```bash
+curl -s http://localhost:5310/api/audit/verify-chain
+```
+
+Now `isValid: false`, `firstBrokenEntryId: 2`, `breakKind: ContentAltered`, and a detail line giving
+the stored hash and the recomputed one. Verification stops at the first break: it reports one broken
+entry rather than a cascade, because every entry after a tampered one has a wrong predecessor hash
+and listing them all would bury the row that actually changed.
+
+`GET /api/audit/2` shows the row as it stands — the edit is invisible in the data, and `hashesMatch`
+is what gives it away.
+
+### Filters
+
+```bash
+curl -s "http://localhost:5310/api/audit?entityId=<supplierId>&take=20"
+```
+
+`entityId`, `correlationId` and `actor`. `correlationId` is the useful one: it follows a single
+upload across all eight services.

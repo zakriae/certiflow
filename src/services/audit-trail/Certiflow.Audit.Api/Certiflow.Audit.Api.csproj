@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Audit.Api</RootNamespace>
+    <UserSecretsId>certiflow-audit-api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Http/Certiflow.Http.csproj" />
+    <ProjectReference Include="../Certiflow.Audit.Infrastructure/Certiflow.Audit.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
