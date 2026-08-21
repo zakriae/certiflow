@@ -28,6 +28,7 @@ public sealed class DependencyRuleTests
         "Verification",
         "Compliance",
         "Audit",
+        "Reporting",
     ];
 
     public static TheoryData<string> BoundedContexts() => [.. Contexts];
@@ -44,6 +45,7 @@ public sealed class DependencyRuleTests
         "Verification" => typeof(Verification.Domain.ReviewTask).Assembly,
         "Compliance" => typeof(Compliance.Domain.SupplierComplianceState).Assembly,
         "Audit" => typeof(Audit.Domain.AuditEntry).Assembly,
+        "Reporting" => typeof(Reporting.Domain.Report).Assembly,
         _ => throw new ArgumentOutOfRangeException(nameof(context), context, "Unknown bounded context."),
     };
 
@@ -154,13 +156,14 @@ public sealed class DependencyRuleTests
     /// Application assemblies, by name. Grows as each context gets its use cases; the rules below
     /// then apply to it automatically.
     /// </summary>
-    private static readonly string[] ApplicationContexts = ["Compliance"];
+    private static readonly string[] ApplicationContexts = ["Compliance", "Reporting"];
 
     public static TheoryData<string> ApplicationLayers() => [.. ApplicationContexts];
 
     private static Assembly ApplicationAssemblyFor(string context) => context switch
     {
         "Compliance" => typeof(Compliance.Application.DependencyInjection).Assembly,
+        "Reporting" => typeof(Reporting.Application.Generation.RequestReportCommand).Assembly,
         _ => throw new ArgumentOutOfRangeException(nameof(context), context, "Unknown application layer."),
     };
 

@@ -43,7 +43,7 @@ on a laptop. Management UI at http://localhost:15672 (guest/guest).
 
 ## Running the services
 
-Six services. Start order does not matter — each creates its own schema, and the compliance state
+Seven services. Start order does not matter — each creates its own schema, and the compliance state
 reconciles itself on read if the profile and the supplier arrive out of order (ADR-0005 covers the
 related delivery hazard).
 
@@ -54,6 +54,7 @@ related delivery hazard).
 | Verification | 5290 |
 | Compliance | 5300 |
 | Audit Trail | 5310 |
+| Reporting | 5320 |
 | Intelligence worker | (no HTTP) |
 
 ```bash
@@ -78,6 +79,10 @@ ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5310 dotnet 
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5270 dotnet run --project src/services/supplier-registry/Certiflow.SupplierRegistry.Api
+```
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5320 dotnet run --project src/services/reporting/Certiflow.Reporting.Api
 ```
 
 The worker needs `az login` — it calls Azure OpenAI with the keyless credential.
@@ -246,3 +251,62 @@ curl -s "http://localhost:5310/api/audit?entityId=<supplierId>&take=20"
 
 `entityId`, `correlationId` and `actor`. `correlationId` is the useful one: it follows a single
 upload across all eight services.
+
+## The compliance report
+
+Reporting turns a supplier's position into the PDF a buyer forwards to an auditor (FR-6.1). Unlike
+every other service it reads its facts synchronously from Compliance and Registry rather than from a
+local copy — ADR-0006 explains why at length, and it is the only place in Certiflow that does this.
+
+Generation is asynchronous, so the request returns immediately:
+
+```bash
+curl -s -X POST http://localhost:5320/api/reports/suppliers/<supplierId> -H "Content-Type: application/json" -d '{"requestedBy":"buyer@acme.example"}'
+```
+
+`202 Accepted` with a report id. Poll it — a report takes a few seconds:
+
+```bash
+curl -s http://localhost:5320/api/reports/<reportId>
+```
+
+`Completed` brings a `verificationHash` and a `downloadUrl`. The download hands back a 15-minute SAS
+rather than the bytes, for the same reason document downloads do:
+
+```bash
+curl -s http://localhost:5320/api/reports/<reportId>/download
+```
+
+### Verification
+
+```bash
+curl -s http://localhost:5320/api/reports/<reportId>/verify
+```
+
+Recomputes the fingerprint from the supplier's position **now** and compares it to what the report
+attested to. `stillAccurate: false` does not mean the file was tampered with — it means the
+supplier's compliance has changed since the report was issued, which is what someone holding an old
+PDF needs to know. Approve another certificate for that supplier and watch it flip.
+
+The hash covers the facts, not the file. Restyle the PDF and it is unchanged; alter a certificate
+number and it is not. `daysRemaining` is deliberately excluded — it is derived from the expiry date
+and today, so hashing it would make every report fail its own verification the next morning.
+
+### When generation fails
+
+Ask for a report on a supplier that does not exist:
+
+```bash
+curl -s -X POST http://localhost:5320/api/reports/suppliers/11111111-2222-3333-4444-555555555555 -H "Content-Type: application/json" -d '{"requestedBy":"buyer@acme.example"}'
+```
+
+The job comes back `Failed` with
+`"compliance has no record at /api/suppliers/…/compliance"`, and `/download` answers `409`. The
+message is not dead-lettered and the job is not stranded in `Generating` — a caller can always tell
+a slow report from a dead one.
+
+### Reports are immutable
+
+Requesting twice produces two report ids, two blobs and two fingerprints. `GET
+/api/reports/suppliers/{id}` lists them newest first. A report downloaded in March still says what
+it said in March, which is the difference between an attestation and a dashboard (FR-6.5).

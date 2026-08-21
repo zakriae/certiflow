@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SRS §5.2: Application depends on Domain and on abstractions only. Certiflow.Contracts is
+    deliberately absent here as it is in every other Application layer (ADR-0004).
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Reporting.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Certiflow.Reporting.Domain/Certiflow.Reporting.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

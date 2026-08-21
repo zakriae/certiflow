@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Reporting.Application.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/reporting/Certiflow.Reporting.Application/Certiflow.Reporting.Application.csproj" />
+  </ItemGroup>
+
+</Project>

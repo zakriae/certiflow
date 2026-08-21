@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Reporting.Api</RootNamespace>
+    <UserSecretsId>certiflow-reporting-api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Http/Certiflow.Http.csproj" />
+    <ProjectReference Include="../Certiflow.Reporting.Infrastructure/Certiflow.Reporting.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

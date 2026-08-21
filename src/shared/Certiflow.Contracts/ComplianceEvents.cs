@@ -64,3 +64,16 @@ public sealed record ReportGenerated(
     string RequestedBy,
     Guid CorrelationId,
     Guid? CausationId = null) : IntegrationEvent(CorrelationId, CausationId);
+
+/// <summary>
+/// Published by BC6 when a report request is accepted, and consumed by BC6 itself to do the work
+/// (FR-6.4). It travels through the same outbox as every other event rather than an in-process
+/// queue, so an accepted request survives the process that accepted it.
+/// </summary>
+public sealed record ReportRequested(
+    Guid ReportId,
+    string ReportType,
+    Guid SupplierId,
+    string RequestedBy,
+    Guid CorrelationId,
+    Guid? CausationId = null) : IntegrationEvent(CorrelationId, CausationId);

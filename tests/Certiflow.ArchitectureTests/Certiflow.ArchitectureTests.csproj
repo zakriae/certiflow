@@ -24,6 +24,8 @@
     <ProjectReference Include="../../src/services/compliance/Certiflow.Compliance.Application/Certiflow.Compliance.Application.csproj" />
     <ProjectReference Include="../../src/shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
     <ProjectReference Include="../../src/services/audit-trail/Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj" />
+    <ProjectReference Include="../../src/services/reporting/Certiflow.Reporting.Domain/Certiflow.Reporting.Domain.csproj" />
+    <ProjectReference Include="../../src/services/reporting/Certiflow.Reporting.Application/Certiflow.Reporting.Application.csproj" />
   </ItemGroup>
 
 </Project>
