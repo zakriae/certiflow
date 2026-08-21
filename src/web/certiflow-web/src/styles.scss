@@ -1,1 +1,46 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+  Certiflow commits to a light theme, explicitly, in one place.
+
+  Not a stylistic preference — a bug fix. Nothing here declared a background or a colour, so the
+  page took the viewer's OS preference: on a machine set to dark, the dashboard rendered near-black
+  with dark headings on it and most of the text was simply invisible. The sign-in screen looked
+  fine only because it happened to paint its own panel.
+
+  Components should not each carry a background to defend themselves against this. One declaration
+  here fixes every route, including ones not written yet. `color-scheme: light` also tells the
+  browser to render form controls and scrollbars for a light page, which is what stopped inputs
+  arriving with dark internals on an otherwise white form.
+
+  A real dark theme is a design exercise, not a default to fall into by omission.
+*/
+
+:root {
+  color-scheme: light;
+
+  --ink: #1a202c;
+  --muted: #64748b;
+  --rule: #e2e8f0;
+  --page: #f8fafc;
+  --surface: #fff;
+  --accent: #1d4ed8;
+  --good: #15803d;
+  --warn: #b45309;
+  --bad: #b91c1c;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

@@ -1,9 +1,4 @@
 {
-  "/api/review-tasks": { "target": "http://localhost:5290", "secure": false },
-  "/api/documents":    { "target": "http://localhost:5280", "secure": false },
-  "/api/dashboard":    { "target": "http://localhost:5300", "secure": false },
-  "/api/suppliers":    { "target": "http://localhost:5300", "secure": false },
-  "/api/reports":      { "target": "http://localhost:5320", "secure": false },
-  "/api/audit":        { "target": "http://localhost:5310", "secure": false },
-  "/api/registry":     { "target": "http://localhost:5270", "secure": false, "pathRewrite": { "^/api/registry": "/api" } }
+  "/api":  { "target": "http://localhost:5000", "secure": false },
+  "/auth": { "target": "http://localhost:5000", "secure": false }
 }

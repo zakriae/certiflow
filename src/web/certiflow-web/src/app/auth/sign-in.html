@@ -1,0 +1,48 @@
+<div class="page">
+  <div class="panel">
+    <header>
+      <p class="wordmark">CERTIFLOW</p>
+      <h1>Sign in</h1>
+      <p class="lede">Supplier compliance and document verification.</p>
+    </header>
+
+    <form (ngSubmit)="submit()">
+      <label>
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="username"
+               [ngModel]="email()" (ngModelChange)="email.set($event)" required />
+      </label>
+
+      <label>
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="current-password"
+               [ngModel]="password()" (ngModelChange)="password.set($event)" required />
+      </label>
+
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+
+      <button type="submit" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+    </form>
+
+    @if (accounts().length) {
+      <section class="demo">
+        <h2>Demo accounts</h2>
+        <p>Shared password <code>{{ sharedPassword() }}</code>. Pick a role to see what it may do.</p>
+
+        <ul>
+          @for (account of accounts(); track account.email) {
+            <li>
+              <button type="button" (click)="use(account)">
+                <span class="role">{{ account.role }}</span>
+                <span class="who">{{ account.displayName }}</span>
+                <span class="email">{{ account.email }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+</div>

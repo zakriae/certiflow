@@ -1,0 +1,186 @@
+.dashboard { padding: 1.5rem 2rem 3rem; color: #1a202c; }
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h1 { margin: 0; font-size: 1.35rem; }
+}
+
+.asof { margin: 0.25rem 0 0; color: #64748b; font-size: 0.85rem; }
+
+.error {
+  margin: 1rem 0 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.4rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 1.25rem 0 2rem;
+}
+
+.tile {
+  border: 1px solid #e2e8f0;
+  border-left-width: 3px;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.15rem;
+
+  .count { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  &.is-NonCompliant { border-left-color: #b91c1c; .count { color: #b91c1c; } }
+  &.is-ExpiringSoon { border-left-color: #b45309; .count { color: #b45309; } }
+  &.is-Pending      { border-left-color: #64748b; }
+  &.is-Compliant    { border-left-color: #15803d; .count { color: #15803d; } }
+}
+
+.block {
+  margin-bottom: 2rem;
+
+  h2 { font-size: 1rem; margin: 0 0 0.75rem; }
+}
+
+.empty { color: #64748b; font-size: 0.9rem; margin: 0; }
+
+.suppliers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+
+  > li {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 0.85rem 1rem;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.name { font-weight: 600; }
+
+.missing { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+
+.chip {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.actions { display: flex; gap: 0.5rem; }
+
+button {
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: #1d4ed8;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+
+  &:disabled { background: #94a3b8; cursor: progress; }
+
+  &.ghost { background: #fff; color: #1d4ed8; border: 1px solid #cbd5e1; }
+  &.link  { background: none; color: #1d4ed8; padding: 0; text-decoration: underline; }
+}
+
+.reports {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid #e2e8f0;
+  display: grid;
+  gap: 0.4rem;
+
+  li {
+    display: grid;
+    grid-template-columns: 6rem 1fr auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+
+  .status { color: #b45309; font-weight: 600; &.ok { color: #15803d; } }
+  .requested { color: #64748b; }
+  .hash { color: #475569; font-size: 0.75rem; }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  td { padding: 0.6rem 0.85rem; border-bottom: 1px solid #f1f5f9; }
+  tr:last-child td { border-bottom: 0; }
+
+  .urgent { color: #b91c1c; font-weight: 600; }
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid currentcolor;
+
+  &.is-Compliant    { color: #15803d; }
+  &.is-NonCompliant { color: #b91c1c; }
+  &.is-ExpiringSoon { color: #b45309; }
+  &.is-Pending      { color: #64748b; }
+}
+
+.reports .more {
+  display: block;
+  color: #64748b;
+  font-size: 0.75rem;
+  padding-top: 0.2rem;
+}

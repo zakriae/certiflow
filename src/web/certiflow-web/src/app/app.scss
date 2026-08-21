@@ -1,0 +1,69 @@
+
+// The signed-in chrome. Absent on the sign-in screen, which renders its own full-height page.
+.chrome {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1a202c;
+
+  .wordmark {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: #1a202c;
+    text-decoration: none;
+  }
+
+  nav {
+    display: flex;
+    gap: 1.25rem;
+    margin-right: auto;
+
+    a {
+      font-size: 0.875rem;
+      color: #475569;
+      text-decoration: none;
+      padding: 0.25rem 0;
+      border-bottom: 2px solid transparent;
+
+      &.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+      &:hover { color: #1d4ed8; }
+    }
+  }
+
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+
+    .name { font-weight: 600; }
+
+    .role {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #1d4ed8;
+      background: #eff6ff;
+      border-radius: 0.25rem;
+      padding: 0.1rem 0.35rem;
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #475569;
+      border-radius: 0.35rem;
+      padding: 0.3rem 0.6rem;
+      font: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
+
+      &:hover { border-color: #94a3b8; }
+    }
+  }
+}

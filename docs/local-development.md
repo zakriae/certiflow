@@ -43,7 +43,7 @@ on a laptop. Management UI at http://localhost:15672 (guest/guest).
 
 ## Running the services
 
-Seven services. Start order does not matter — each creates its own schema, and the compliance state
+Eight processes. Start order does not matter — each creates its own schema, and the compliance state
 reconciles itself on read if the profile and the supplier arrive out of order (ADR-0005 covers the
 related delivery hazard).
 
@@ -55,6 +55,7 @@ related delivery hazard).
 | Compliance | 5300 |
 | Audit Trail | 5310 |
 | Reporting | 5320 |
+| Gateway | 5000 |
 | Intelligence worker | (no HTTP) |
 
 ```bash
@@ -185,9 +186,22 @@ Node 22 is required (`.nvmrc`); the system Node is not touched.
 cd src/web/certiflow-web && nvm use && npm install && npm start
 ```
 
-The dev server proxies `/api/*` to the five services (`proxy.conf.json`) so the SPA talks to one
-origin. **A YARP gateway replaces this proxy when deployed** — the proxy is a dev convenience, not
-the architecture.
+The proxy now has exactly two entries, both pointing at the gateway on 5000 — which is the gateway
+earning its place. It used to list every service individually, and every new service meant another
+line that existed only in development and had no counterpart in Azure.
+
+Sign in at http://localhost:4200 with any of the demo accounts; the shared password is printed on
+the screen and fetched from the gateway, so there is one place it is defined.
+
+| Account | Role | Sees |
+|---|---|---|
+| `admin@certiflow.demo` | Admin | Everything, including publishing profiles |
+| `reviewer@certiflow.demo` | Reviewer | Dashboard and the review queue |
+| `auditor@certiflow.demo` | Auditor | Dashboard, audit trail, reports — no approvals (FR-8.6) |
+| `supplier@certiflow.demo` | SupplierUser | Uploads only; refused every portfolio route (NFR-8) |
+
+Restarting the gateway invalidates every issued token, because the seeded issuer generates its
+signing key in memory. Signing in again is the fix, and that it is necessary is the point.
 
 ### Azurite needs CORS for the PDF viewer
 
@@ -310,3 +324,16 @@ a slow report from a dead one.
 Requesting twice produces two report ids, two blobs and two fingerprints. `GET
 /api/reports/suppliers/{id}` lists them newest first. A report downloaded in March still says what
 it said in March, which is the difference between an attestation and a dashboard (FR-6.5).
+
+## Running everything at once
+
+```bash
+bash scripts/run-all.sh
+```
+
+Builds once, then starts the gateway, six APIs and the worker, and waits until all seven answer
+`/health`.
+
+The single build is not a convenience. Starting them with plain `dotnet run` makes six MSBuild
+processes compile the same shared projects into the same `obj/` simultaneously, and they fail on
+each other's file locks — which prints "the build failed" six times and is really a race.

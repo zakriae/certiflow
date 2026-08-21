@@ -1,1 +1,20 @@
+@if (showChrome()) {
+  <header class="chrome">
+    <a class="wordmark" routerLink="/dashboard">CERTIFLOW</a>
+
+    <nav>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      @if (auth.canReview()) {
+        <a routerLink="/review" routerLinkActive="active">Review queue</a>
+      }
+    </nav>
+
+    <div class="who">
+      <span class="name">{{ auth.displayName() }}</span>
+      <span class="role">{{ auth.role() }}</span>
+      <button type="button" (click)="signOut()">Sign out</button>
+    </div>
+  </header>
+}
+
 <router-outlet />

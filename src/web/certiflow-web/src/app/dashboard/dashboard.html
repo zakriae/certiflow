@@ -1,0 +1,153 @@
+<section class="dashboard">
+  <header class="head">
+    <div>
+      <h1>Portfolio compliance</h1>
+      @if (view(); as v) {
+        <p class="asof">Evaluated on {{ v.evaluatedOn }}</p>
+      }
+    </div>
+    <button type="button" class="ghost" (click)="load()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="totals">
+    @for (tile of totals(); track tile.status) {
+      <div class="tile" [class]="'is-' + tile.status">
+        <span class="count">{{ tile.count }}</span>
+        <span class="label">{{ tile.label }}</span>
+      </div>
+    }
+  </div>
+
+  @if (view(); as v) {
+    <section class="block">
+      <h2>Non-compliant now</h2>
+
+      @if (v.nonCompliant.length === 0) {
+        <p class="empty">Every supplier meets their mandatory requirements.</p>
+      } @else {
+        <ul class="suppliers">
+          @for (supplier of v.nonCompliant; track supplier.supplierId) {
+            <li>
+              <div class="row">
+                <div class="who">
+                  <span class="name">{{ nameOf(supplier.supplierId) }}</span>
+                  <span class="missing">
+                    @for (b of supplier.breached; track b.documentType) {
+                      <span class="chip">{{ b.documentType }} — {{ b.status }}</span>
+                    }
+                  </span>
+                </div>
+
+                <div class="actions">
+                  <button type="button" class="ghost" (click)="toggleReports(supplier.supplierId)">Reports</button>
+                  <button type="button" (click)="requestReport(supplier.supplierId)"
+                          [disabled]="busySupplier() === supplier.supplierId">
+                    {{ busySupplier() === supplier.supplierId ? 'Generating…' : 'Generate report' }}
+                  </button>
+                </div>
+              </div>
+
+              @if (expanded() === supplier.supplierId) {
+                <ul class="reports">
+                  @for (report of recentReports(supplier.supplierId); track report.reportId) {
+                    <li>
+                      <span class="status" [class.ok]="report.status === 'Completed'">{{ report.status }}</span>
+                      <span class="requested">{{ report.requestedBy }}</span>
+                      <code class="hash">{{ (report.verificationHash ?? '—').slice(0, 16) }}</code>
+                      @if (report.status === 'Completed') {
+                        <button type="button" class="link" (click)="download(report.reportId)">Download</button>
+                      }
+                    </li>
+                  } @empty {
+                    <li class="empty">No reports yet.</li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="block">
+      <h2>All suppliers</h2>
+
+      <ul class="suppliers">
+        @for (supplier of v.suppliers; track supplier.supplierId) {
+          <li>
+            <div class="row">
+              <div class="who">
+                <span class="name">{{ nameOf(supplier.supplierId) }}</span>
+                <span class="meta">
+                  <span class="badge" [class]="'is-' + supplier.overallStatus">{{ supplier.overallStatus }}</span>
+                  {{ supplier.mandatorySatisfied }} of {{ supplier.mandatoryTotal }} mandatory requirements met
+                </span>
+              </div>
+
+              <div class="actions">
+                <button type="button" class="ghost" (click)="toggleReports(supplier.supplierId)">Reports</button>
+                <button type="button" (click)="requestReport(supplier.supplierId)"
+                        [disabled]="busySupplier() === supplier.supplierId">
+                  {{ busySupplier() === supplier.supplierId ? 'Generating…' : 'Generate report' }}
+                </button>
+              </div>
+            </div>
+
+            @if (expanded() === supplier.supplierId) {
+              <ul class="reports">
+                @for (report of recentReports(supplier.supplierId); track report.reportId) {
+                  <li>
+                    <span class="status" [class.ok]="report.status === 'Completed'">{{ report.status }}</span>
+                    <span class="requested">{{ report.requestedBy }}</span>
+                    <code class="hash">{{ (report.verificationHash ?? '—').slice(0, 16) }}</code>
+                    @if (report.status === 'Completed') {
+                      <button type="button" class="link" (click)="download(report.reportId)">Download</button>
+                    }
+                  </li>
+                } @empty {
+                  <li class="empty">No reports yet.</li>
+                }
+
+                @if (reportCount(supplier.supplierId) > 5) {
+                  <li class="more">
+                    {{ reportCount(supplier.supplierId) - 5 }} older report(s) not shown.
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="block">
+      <h2>Expiring within 60 days</h2>
+
+      @if (v.expiringSoon.length === 0) {
+        <p class="empty">Nothing expires in the next 60 days.</p>
+      } @else {
+        <table>
+          <thead>
+            <tr><th>Supplier</th><th>Requirement</th><th>Expires</th><th>Remaining</th></tr>
+          </thead>
+          <tbody>
+            @for (row of v.expiringSoon; track row.supplierId + row.requirementId) {
+              <tr>
+                <td>{{ nameOf(row.supplierId) }}</td>
+                <td>{{ row.documentType }}</td>
+                <td>{{ row.expiresOn }}</td>
+                <td [class.urgent]="row.daysRemaining <= 30">
+                  {{ row.daysRemaining < 0 ? 'expired' : row.daysRemaining + ' days' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+  }
+</section>

@@ -88,6 +88,39 @@ app.MapGet("/api/dashboard", async (
 });
 
 // ── One supplier, obligation by obligation (FR-5.2) ─────────────────────────────────────────────
+// ── Every supplier and where they stand ─────────────────────────────────────────────────────────
+// The dashboard listed only the failing suppliers, which made a healthy portfolio a blank screen -
+// and left no way to pull a compliance certificate for a supplier who is passing, which is the
+// commonest reason anyone wants one.
+//
+// Status is derived per row rather than read from the snapshot column (ADR-0001). The column exists
+// so the *counts* on the dashboard can be answered in SQL under NFR-2's 500 ms; a list this size is
+// not where that matters, and deriving keeps the answer honest even if no job has run today.
+app.MapGet("/api/suppliers", async (
+    ComplianceDbContext database,
+    IClock clock,
+    CancellationToken cancellationToken) =>
+{
+    var states = await database.SupplierCompliance.AsNoTracking().ToListAsync(cancellationToken);
+    var today = clock.Today;
+
+    return Results.Ok(states
+        .Select(state => new
+        {
+            supplierId = state.Id.Value,
+            state.CategoryId,
+            state.ProfileVersion,
+            overallStatus = state.OverallStatusOn(today).ToString(),
+            mandatoryTotal = state.Obligations.Count(o => o.IsApplicable && o.IsMandatory),
+            mandatorySatisfied = state.Obligations.Count(o =>
+                o.IsApplicable && o.IsMandatory && o.StatusOn(today) == ObligationStatus.Satisfied),
+            state.LastEvaluatedAt,
+        })
+        .OrderBy(s => s.overallStatus == "Compliant")
+        .ThenBy(s => s.supplierId)
+        .ToList());
+});
+
 app.MapGet("/api/suppliers/{id:guid}/compliance", async (
     Guid id,
     ComplianceDbContext database,
