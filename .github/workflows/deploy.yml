@@ -71,12 +71,15 @@ jobs:
       - name: Create resource group
         run: az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --tags application=certiflow managedBy=bicep --output none
 
-      # Runs before the images exist, and that is fine: Container Apps will fail to pull on the
-      # first revision and succeed once the images are pushed and the apps are updated below. The
-      # alternative - building images before the registry exists - has a worse chicken-and-egg
-      # problem, because the registry is the thing being provisioned.
+      # Pass one: everything except the container apps.
+      #
+      # This comment used to claim a single pass was fine - that Container Apps would fail to pull
+      # on the first revision and recover once the images were pushed. It does not. It fails the
+      # deployment outright with a pull error and takes every app in the module with it, which is
+      # how the first real deployment ended. The registry must exist before images can be pushed,
+      # and the images must exist before an app can be created, so the passes are the honest shape.
       - id: deploy
-        name: Deploy Bicep
+        name: Deploy Bicep (infrastructure)
         run: |
           set -euo pipefail
           az deployment group create \
@@ -89,6 +92,7 @@ jobs:
               sqlAdminObjectId='${{ secrets.AZURE_SQL_ADMIN_OBJECT_ID }}' \
               sqlAdminLogin='${{ secrets.AZURE_SQL_ADMIN_LOGIN }}' \
               imageTag='${{ steps.tag.outputs.value }}' \
+              deployApps=false \
             --query properties.outputs \
             --output json > outputs.json
 
@@ -143,10 +147,46 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  containers:
+    name: Deploy container apps
+    runs-on: ubuntu-latest
+    needs: [infrastructure, images]
+    outputs:
+      gatewayUrl: ${{ steps.deploy.outputs.gatewayUrl }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Pass two: the same template with the apps enabled, now that there are images to pull.
+      - id: deploy
+        name: Deploy Bicep (container apps)
+        run: |
+          set -euo pipefail
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep \
+            --parameters \
+              environmentName='${{ github.event.inputs.environmentName }}' \
+              openAiAccountName="$OPENAI_ACCOUNT" \
+              openAiResourceGroup="$OPENAI_RESOURCE_GROUP" \
+              sqlAdminObjectId='${{ secrets.AZURE_SQL_ADMIN_OBJECT_ID }}' \
+              sqlAdminLogin='${{ secrets.AZURE_SQL_ADMIN_LOGIN }}' \
+              imageTag='${{ needs.infrastructure.outputs.imageTag }}' \
+              deployApps=true \
+            --query properties.outputs \
+            --output json > outputs.json
+
+          echo "gatewayUrl=$(jq -r '.gatewayUrl.value' outputs.json)" >> "$GITHUB_OUTPUT"
+
   migrate:
     name: Apply migrations
     runs-on: ubuntu-latest
-    needs: [infrastructure, images]
+    needs: [infrastructure, images, containers]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -201,7 +241,7 @@ jobs:
   smoke:
     name: Smoke test
     runs-on: ubuntu-latest
-    needs: [infrastructure, images, migrate]
+    needs: [infrastructure, containers, migrate]
     steps:
       - uses: azure/login@v2
         with:
@@ -215,7 +255,7 @@ jobs:
       - name: Wait for the gateway
         run: |
           set -euo pipefail
-          URL='${{ needs.infrastructure.outputs.gatewayUrl }}'
+          URL='${{ needs.containers.outputs.gatewayUrl }}'
           echo "Gateway: $URL"
 
           for attempt in $(seq 1 30); do
@@ -231,10 +271,34 @@ jobs:
           echo "::error::The gateway never became healthy."
           exit 1
 
+      # /health and the discovery document are both mapped in code, so they answer 200 even when the
+      # proxy configuration is entirely absent - which is exactly what happened on the first real
+      # deployment, and it looked like a success. A smoke test has to cross the gateway into a
+      # service to mean anything.
+      - name: Verify the gateway actually proxies
+        run: |
+          set -euo pipefail
+          URL='${{ needs.containers.outputs.gatewayUrl }}'
+
+          # 401, not 200: the route exists and the service behind it demanded a token. A 404 here
+          # means the routes did not load.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 "$URL/api/audit")
+          echo "GET /api/audit without a token -> $code"
+
+          if [ "$code" = "404" ]; then
+            echo "::error::The gateway is not routing - /api/audit returned 404. Check the ReverseProxy cluster addresses."
+            exit 1
+          fi
+
+          if [ "$code" != "401" ]; then
+            echo "::error::Expected 401 from an unauthenticated proxied call, got $code."
+            exit 1
+          fi
+
       - name: Verify the issuer is serving discovery
         run: |
           set -euo pipefail
-          URL='${{ needs.infrastructure.outputs.gatewayUrl }}'
+          URL='${{ needs.containers.outputs.gatewayUrl }}'
           # If this fails, every service will fail to validate tokens - and it fails as a confusing
           # 401 rather than an obvious configuration error, so it is worth asserting here.
           curl -sf --max-time 20 "$URL/.well-known/openid-configuration" | jq -e '.jwks_uri' > /dev/null
@@ -247,7 +311,7 @@ jobs:
             echo ""
             echo "| | |"
             echo "|---|---|"
-            echo "| Gateway | ${{ needs.infrastructure.outputs.gatewayUrl }} |"
+            echo "| Gateway | ${{ needs.containers.outputs.gatewayUrl }} |"
             echo "| Image tag | \`${{ needs.infrastructure.outputs.imageTag }}\` |"
             echo "| Resource group | \`$RESOURCE_GROUP\` |"
             echo ""

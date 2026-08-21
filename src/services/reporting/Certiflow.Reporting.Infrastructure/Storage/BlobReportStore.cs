@@ -3,6 +3,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Certiflow.Reporting.Application.Abstractions;
 using Certiflow.Reporting.Domain;
+using Certiflow.Storage;
 using Microsoft.Extensions.Options;
 
 namespace Certiflow.Reporting.Infrastructure.Storage;
@@ -12,6 +13,9 @@ public sealed class ReportStorageOptions
     public const string SectionName = "Storage";
 
     public string ConnectionString { get; set; } = string.Empty;
+
+    /// <summary>Set instead of the connection string when reaching the account by identity (NFR-9).</summary>
+    public string ServiceUri { get; set; } = string.Empty;
 
     /// <summary>
     /// A separate container from documents (SRS §13.2). Reports are immutable once written and
@@ -25,15 +29,16 @@ public sealed class BlobReportStore : IReportBlobStore
 {
     private readonly BlobContainerClient _container;
 
+    private readonly BlobServiceClient _service;
+
     public BlobReportStore(IOptions<ReportStorageOptions> options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         var settings = options.Value;
-        _container = new BlobServiceClient(settings.ConnectionString)
-            .GetBlobContainerClient(settings.ReportsContainer);
 
-        _container.CreateIfNotExists(PublicAccessType.None);
+        (_container, _service) = BlobAccess.CreateContainer(
+            settings.ServiceUri, settings.ConnectionString, settings.ReportsContainer);
     }
 
     public async Task<StorageReference> StoreAsync(byte[] content, string blobPath, CancellationToken cancellationToken)
@@ -63,25 +68,9 @@ public sealed class BlobReportStore : IReportBlobStore
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var blob = _container.GetBlobClient(reference.BlobPath);
-
-        if (!blob.CanGenerateSasUri)
-        {
-            throw new InvalidOperationException(
-                "The blob client cannot mint a SAS. In Azure this means the credential is a managed " +
-                "identity, which needs a user-delegation key rather than an account key (NFR-9).");
-        }
-
-        var builder = new BlobSasBuilder
-        {
-            BlobContainerName = _container.Name,
-            BlobName = reference.BlobPath,
-            Resource = "b",
-            ExpiresOn = DateTimeOffset.UtcNow.Add(lifetime),
-        };
-
-        builder.SetPermissions(BlobSasPermissions.Read);
-
-        return Task.FromResult(blob.GenerateSasUri(builder).ToString());
+        // The helper picks account-key or user-delegation signing depending on how the client was
+        // built. The old code threw a descriptive exception when it could not sign - which was
+        // honest, and still meant no report could be downloaded in Azure.
+        return BlobAccess.CreateReadUrlAsync(_container, _service, reference.BlobPath, lifetime, cancellationToken);
     }
 }

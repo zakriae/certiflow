@@ -1,4 +1,7 @@
 param suffix string
+
+@description('Short environment name. Container App names have a 32-character limit.')
+param environmentName string
 param location string
 param tags object
 param imageTag string
@@ -26,6 +29,32 @@ param openAiDeploymentName string
   does. A single shared identity would give every container the union of every permission - which
   is the same as giving them all the maximum.
 */
+
+/*
+  Names are built from a deliberately short stem.
+
+  Azure's name limits differ per resource type and two of them bit during the first real deployment:
+  storage accounts cap at 24 characters and Container Apps at 32, while the descriptive
+  'ca-certiflow-<service>-<env>-<13-char hash>' came to 41. Dropping 'certiflow' costs nothing - the
+  resource group already says it - and truncating the hash to six characters keeps collisions
+  implausible within one resource group while leaving room for the longest service name.
+
+  3 + 12 ('verification') + 1 + 6 + 1 + 6 = 29.
+*/
+var stem = '${take(environmentName, 6)}-${take(uniqueString(resourceGroup().id), 6)}'
+
+var gatewayAppName = 'ca-gateway-${stem}'
+var registryAppName = 'ca-registry-${stem}'
+var complianceAppName = 'ca-compliance-${stem}'
+
+// Internal FQDNs for the services the gateway proxies to.
+//
+// These have to be supplied, and their absence is what made the first deployment look healthy while
+// being useless: the YARP routes lived only in appsettings.Development.json, so in Production the
+// gateway had no routes and answered 404 for everything - while /health and the OIDC discovery
+// document, which are mapped in code, both returned 200. A smoke test that only checks the front
+// door would have called that a success.
+var internalSuffix = 'internal.${environment.properties.defaultDomain}'
 
 var services = [
   { name: 'gateway',      image: 'gateway',      external: true,  storage: false, openAi: false }
@@ -113,7 +142,7 @@ resource delegatorAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
 }]
 
 resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in services: {
-  name: 'ca-certiflow-${service.name}-${suffix}'
+  name: 'ca-${service.name}-${stem}'
   location: location
   tags: tags
   identity: {
@@ -151,6 +180,15 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
           }
           env: concat([
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
+            // Logging levels are NOT set here, and the attempt is worth recording: only
+            // appsettings.Development.json turned EF command logging down, so Production logged
+            // every outbox SELECT - one every two seconds, per service - which buried the actual
+            // extraction failure this deployment was trying to diagnose.
+            //
+            // The obvious fix, an environment variable, cannot work: Container Apps runs on
+            // Kubernetes, whose environment variable names may not contain a dot, and the key is
+            // Microsoft.EntityFrameworkCore.Database.Command. `__` separates sections; it does not
+            // escape dots within a key. The levels ship in each service's appsettings.json instead.
             { name: 'DOTNET_ENVIRONMENT', value: 'Production' }
             // How DefaultAzureCredential knows which identity to use when a container has one
             // assigned. Without it the credential tries them in order and fails confusingly.
@@ -164,21 +202,40 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
             { name: 'ConnectionStrings__AuditDatabase', value: sqlConnectionString }
             { name: 'ConnectionStrings__ReportingDatabase', value: sqlConnectionString }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
-            { name: 'Auth__Authority', value: 'https://ca-certiflow-gateway-${suffix}.${environment.properties.defaultDomain}' }
+            { name: 'Auth__Authority', value: 'https://${gatewayAppName}.${environment.properties.defaultDomain}' }
             { name: 'Auth__Audience', value: 'certiflow-api' }
             { name: 'Auth__RequireHttpsMetadata', value: 'true' }
           ], service.storage ? [
             { name: 'Storage__ServiceUri', value: storageBlobEndpoint }
             { name: 'Storage__AccountName', value: storageAccountName }
+            // Named to match the containers created in data.bicep. Without these the services fall
+            // back to their defaults, which happen to be the same - but "happen to be" is not a
+            // configuration strategy.
+            { name: 'Storage__DocumentsContainer', value: 'documents' }
+            { name: 'Storage__ReportsContainer', value: 'reports' }
           ] : [], service.openAi ? [
             { name: 'AzureOpenAI__Endpoint', value: openAiEndpoint }
             { name: 'AzureOpenAI__Deployment', value: openAiDeploymentName }
           ] : [], service.name == 'gateway' ? [
-            { name: 'Auth__Issuer', value: 'https://ca-certiflow-gateway-${suffix}.${environment.properties.defaultDomain}' }
-            { name: 'Services__Registry', value: 'https://ca-certiflow-registry-${suffix}.internal.${environment.properties.defaultDomain}' }
+            { name: 'Auth__Issuer', value: 'https://${gatewayAppName}.${environment.properties.defaultDomain}' }
+            { name: 'Cors__SpaOrigin', value: 'https://${gatewayAppName}.${environment.properties.defaultDomain}' }
+            // One per cluster declared in the gateway's appsettings.json. Double underscore is the
+            // configuration provider's section separator, so these bind straight onto
+            // ReverseProxy:Clusters:<id>:Destinations:primary:Address.
+            //
+            // Their absence is what made the first deployment look healthy and be useless: the
+            // routes lived only in appsettings.Development.json, so Production had no proxy config
+            // and answered 404 for every API call while /health and OIDC discovery - both mapped in
+            // code - returned 200.
+            { name: 'ReverseProxy__Clusters__registry__Destinations__primary__Address', value: 'https://${registryAppName}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__intake__Destinations__primary__Address', value: 'https://ca-intake-${stem}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__verification__Destinations__primary__Address', value: 'https://ca-verification-${stem}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__compliance__Destinations__primary__Address', value: 'https://${complianceAppName}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__audit__Destinations__primary__Address', value: 'https://ca-audit-${stem}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__reporting__Destinations__primary__Address', value: 'https://ca-reporting-${stem}.${internalSuffix}' }
           ] : [], service.name == 'reporting' ? [
-            { name: 'Services__Compliance', value: 'https://ca-certiflow-compliance-${suffix}.internal.${environment.properties.defaultDomain}' }
-            { name: 'Services__Registry', value: 'https://ca-certiflow-registry-${suffix}.internal.${environment.properties.defaultDomain}' }
+            { name: 'Services__Compliance', value: 'https://${complianceAppName}.${internalSuffix}' }
+            { name: 'Services__Registry', value: 'https://${registryAppName}.${internalSuffix}' }
           ] : [])
           probes: service.name == 'worker' ? [] : [
             {
@@ -191,10 +248,24 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
         }
       ]
       scale: {
-        // Zero. The environment exists for a recording session, and paying for a warm replica
-        // around the clock to avoid a cold start is the wrong trade (SRS §20 R8 - warm them by
-        // hitting them once before recording instead).
-        minReplicas: 0
+        /*
+          One replica for anything that consumes messages; zero only for the gateway.
+
+          This started at zero everywhere, and the deployment looked fine: health checks passed, the
+          authorization matrix was perfect, and the audit ledger even filled - because restarting the
+          revisions had briefly woken everything. Then a supplier was registered and Compliance never
+          created its state. A scaled-to-zero container is not listening to Service Bus. HTTP traffic
+          wakes an app; a message arriving does not.
+
+          The proper fix is a KEDA azure-servicebus scale rule per subscription, which is how you
+          keep scale-to-zero and still process events. It needs a scaler identity and one rule per
+          queue this system has dozens of, and it buys nothing here: the environment exists for the
+          length of a recording session (SRS §5.0), so 'idle' is a state it is barely in.
+
+          The gateway keeps minReplicas: 0 because it is purely HTTP - a request wakes it, and §20 R8
+          already accepts that first-request cold start.
+        */
+        minReplicas: service.name == 'gateway' ? 0 : 1
         maxReplicas: 2
       }
     }

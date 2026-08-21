@@ -4,6 +4,7 @@ using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Certiflow.Intake.Application.Abstractions;
 using Certiflow.Intake.Domain;
+using Certiflow.Storage;
 using Microsoft.Extensions.Options;
 using UglyToad.PdfPig;
 
@@ -16,6 +17,12 @@ public sealed class BlobStorageOptions
     public string ConnectionString { get; set; } = string.Empty;
 
     /// <summary>
+    /// Set instead of <see cref="ConnectionString"/> when the account is reached by managed identity
+    /// (NFR-9). Azure sets this; development uses the Azurite connection string.
+    /// </summary>
+    public string ServiceUri { get; set; } = string.Empty;
+
+    /// <summary>
     /// Private, always. No document is ever reachable without a freshly minted, short-lived SAS
     /// (NFR-10) — a public container would put supplier insurance certificates on the open web.
     /// </summary>
@@ -26,15 +33,16 @@ public sealed class BlobDocumentStore : IDocumentBlobStore
 {
     private readonly BlobContainerClient _container;
 
+    private readonly BlobServiceClient _service;
+
     public BlobDocumentStore(IOptions<BlobStorageOptions> options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         var settings = options.Value;
-        var service = new BlobServiceClient(settings.ConnectionString);
 
-        _container = service.GetBlobContainerClient(settings.DocumentsContainer);
-        _container.CreateIfNotExists(PublicAccessType.None);
+        (_container, _service) = BlobAccess.CreateContainer(
+            settings.ServiceUri, settings.ConnectionString, settings.DocumentsContainer);
     }
 
     public async Task<StorageReference> StoreAsync(
@@ -60,29 +68,20 @@ public sealed class BlobDocumentStore : IDocumentBlobStore
         return await _container.GetBlobClient(reference.BlobPath).OpenReadAsync(cancellationToken: cancellationToken);
     }
 
-    public Task<Uri> CreateReadUrlAsync(
+    public async Task<Uri> CreateReadUrlAsync(
         StorageReference reference,
         TimeSpan lifetime,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(reference);
 
-        var blob = _container.GetBlobClient(reference.BlobPath);
+        // Signing moved into the shared helper because there are two ways to do it and which one is
+        // available depends on how the client was built: an account key signs directly, a managed
+        // identity has no key and must sign with a user delegation key from the service. Only the
+        // first existed here, so every link failed in Azure.
+        var url = await BlobAccess.CreateReadUrlAsync(_container, _service, reference.BlobPath, lifetime, cancellationToken);
 
-        var builder = new BlobSasBuilder
-        {
-            BlobContainerName = reference.Container,
-            BlobName = reference.BlobPath,
-            Resource = "b",
-            // A small backdated start absorbs clock skew between the app and storage; without it a
-            // freshly minted link can be rejected as not-yet-valid.
-            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5),
-            ExpiresOn = DateTimeOffset.UtcNow.Add(lifetime),
-        };
-
-        builder.SetPermissions(BlobSasPermissions.Read);
-
-        return Task.FromResult(blob.GenerateSasUri(builder));
+        return new Uri(url);
     }
 }
 

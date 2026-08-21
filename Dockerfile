@@ -16,7 +16,14 @@ WORKDIR /src
 
 # Restore before the source is copied, so a code change does not invalidate the package cache. The
 # solution and props files are what determine the graph, and they change far less often than code.
-COPY Directory.Build.props Directory.Packages.props global.json Certiflow.sln ./
+# .editorconfig is not optional here, and leaving it out cost two failed images.
+#
+# Warnings are errors in this repo, and .editorconfig is where the generated EF migrations are
+# marked generated_code and exempted from style rules. Without it in the build context the analyzers
+# apply hand-written-code rules to scaffolded files, and `dotnet publish` fails on CA1861 inside the
+# container while the identical build passes on a laptop. A build that only fails in the image is
+# the worst kind to debug, because the thing that differs is invisible.
+COPY .editorconfig Directory.Build.props Directory.Packages.props global.json Certiflow.sln ./
 COPY src/ src/
 COPY tests/ tests/
 

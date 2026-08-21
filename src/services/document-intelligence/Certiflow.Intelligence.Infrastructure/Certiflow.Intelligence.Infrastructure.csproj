@@ -34,6 +34,7 @@
     <!-- Contracts referenced here only: integration events are translated at this boundary. -->
     <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
     <ProjectReference Include="../../../shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Messaging/Certiflow.Messaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>

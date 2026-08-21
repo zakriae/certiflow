@@ -116,42 +116,48 @@ app.MapPost("/auth/token", (LoginRequest request, SeededTokenIssuer tokens) =>
 });
 
 // ── Service-to-service tokens ───────────────────────────────────────────────────────────────────
-// Development only, and it deliberately asks for no credential.
+// Available in every environment, and that is a deliberate, documented weakness of the stand-in.
 //
-// In Azure this endpoint does not exist: BC6 gets a token from its managed identity, and the fact
-// that nothing had to authenticate to obtain it is the entire point of managed identity - the
-// platform vouches for the workload. Demanding a client secret here would model the *wrong* thing
-// and put a secret in a config file to do it (NFR-9).
+// The comment that used to sit here said Azure would not need this because BC6 would present its
+// managed identity instead. That was an intention, not an implementation, and the first deployment
+// proved it: report generation failed with 404 because the endpoint was Development-only.
 //
-// What makes that safe there and only tolerable here: in Container Apps the services sit behind
-// internal ingress. Locally they are on localhost, so this is a demo affordance and is compiled out
-// of anything else.
-if (app.Environment.IsDevelopment())
+// It cannot be fixed by simply using the managed identity, either. Every service validates tokens
+// against exactly one issuer - this gateway - and a managed-identity token is issued by Entra. A
+// service presenting one would be rejected for a bad issuer. Making it work means the gateway
+// validating an Entra token and exchanging it for one of its own, which is real work spent
+// hardening a component whose entire purpose is to be deleted when Entra External ID lands (SRS
+// §20 R4) - at which point the services trust Entra directly and this endpoint disappears.
+//
+// So: it issues a Service-role token to anyone who asks. In an environment holding only generated
+// data (NFR-11), for the length of a recording session (§5.0), that is an acceptable trade. It
+// would not be in a system holding anything real, and ADR-0007 records it as the one piece of the
+// auth story that is demo-grade rather than production-shaped.
+app.MapPost("/auth/service-token", (ServiceTokenRequest request, SeededTokenIssuer tokens) =>
 {
-    app.MapPost("/auth/service-token", (ServiceTokenRequest request, SeededTokenIssuer tokens) =>
+    if (request is null || string.IsNullOrWhiteSpace(request.Service))
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Service))
-        {
-            return Results.Problem("A service name is required.", statusCode: StatusCodes.Status400BadRequest);
-        }
+        return Results.Problem("A service name is required.", statusCode: StatusCodes.Status400BadRequest);
+    }
 
-        var lifetime = TimeSpan.FromHours(1);
+    // An hour, not eight. A workload refreshes silently; a short life limits what a leaked token is
+    // worth without inconveniencing anybody.
+    var lifetime = TimeSpan.FromHours(1);
 
-        var account = new DemoAccount(
-            SubjectId: Guid.Parse("00000000-0000-0000-0000-0000000000f1"),
-            Email: $"{request.Service}@certiflow.internal",
-            DisplayName: $"Certiflow {request.Service}",
-            Role: Roles.Service,
-            SupplierId: null);
+    var account = new DemoAccount(
+        SubjectId: Guid.Parse("00000000-0000-0000-0000-0000000000f1"),
+        Email: $"{request.Service}@certiflow.internal",
+        DisplayName: $"Certiflow {request.Service}",
+        Role: Roles.Service,
+        SupplierId: null);
 
-        return Results.Ok(new
-        {
-            accessToken = tokens.Issue(account, lifetime),
-            tokenType = "Bearer",
-            expiresIn = (int)lifetime.TotalSeconds,
-        });
-    }).AllowAnonymous();
-}
+    return Results.Ok(new
+    {
+        accessToken = tokens.Issue(account, lifetime),
+        tokenType = "Bearer",
+        expiresIn = (int)lifetime.TotalSeconds,
+    });
+}).AllowAnonymous();
 
 app.MapGet("/auth/me", (ClaimsPrincipal user) => Results.Ok(new
 {

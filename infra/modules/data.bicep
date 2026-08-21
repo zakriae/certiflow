@@ -1,4 +1,7 @@
 param suffix string
+
+@description('Environment name, used where a resource has a tighter name limit than the full suffix.')
+param environmentName string
 param location string
 param tags object
 param sqlAdminObjectId string
@@ -66,8 +69,11 @@ resource allowAzureServices 'Microsoft.Sql/servers/firewallRules@2023-08-01-prev
   }
 }
 
+// Storage account names are capped at 24 characters, which is tighter than every other resource
+// here - 'stcertiflow' plus the full suffix came to 28 and failed preflight. `take` bounds it for
+// any environment name rather than working only for the short ones: 2 + 6 + 13 = 21.
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: 'stcertiflow${replace(suffix, '-', '')}'
+  name: 'st${take(environmentName, 6)}${uniqueString(resourceGroup().id)}'
   location: location
   tags: tags
   sku: { name: 'Standard_LRS' }

@@ -1,3 +1,4 @@
+using Certiflow.Messaging;
 using Certiflow.Compliance.Application.Abstractions;
 using Certiflow.Compliance.Infrastructure.Messaging;
 using Certiflow.Compliance.Infrastructure.Persistence;
@@ -58,7 +59,7 @@ public static class DependencyInjection
             {
                 bus.UsingAzureServiceBus((context, configurator) =>
                 {
-                    configurator.Host(serviceBus);
+                    configurator.UseCertiflowHost(serviceBus);
                     configurator.ConfigureEndpoints(context);
                 });
 

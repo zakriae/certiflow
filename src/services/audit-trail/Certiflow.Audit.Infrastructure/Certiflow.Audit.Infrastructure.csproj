@@ -19,5 +19,6 @@
     <ProjectReference Include="../Certiflow.Audit.Domain/Certiflow.Audit.Domain.csproj" />
     <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
     <ProjectReference Include="../../../shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Messaging/Certiflow.Messaging.csproj" />
   </ItemGroup>
 </Project>

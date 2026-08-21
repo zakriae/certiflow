@@ -81,6 +81,24 @@ Requesting a report is deliberately allowed for `Auditor`. It creates a row, so 
 write, but what it produces is a rendering of facts the auditor may already read — and an auditor
 who cannot pull a compliance certificate cannot do the job the role exists for.
 
+## The one demo-grade piece
+
+`POST /auth/service-token` issues a `Service`-role token to **anyone who asks**, in every
+environment. That is a real weakness and it is deliberate.
+
+The original design said Azure would not need it, because Reporting would present its managed
+identity. The first deployment disproved that in two ways: the endpoint was `Development`-only so
+report generation failed with 404, and the fix is not simply "use the managed identity" — every
+service validates against exactly one issuer, this gateway, and a managed-identity token is issued
+by Entra. A service presenting one is rejected for a bad issuer.
+
+Making it correct means the gateway validating an Entra token and exchanging it for one of its own.
+That is real work spent hardening a component whose entire purpose is to be deleted: when Entra
+External ID lands (SRS §20 R4) the services trust Entra directly and this endpoint does not exist.
+
+In an environment holding only generated data (NFR-11), for the length of a recording session
+(§5.0), that trade is acceptable. **It would not be in a system holding anything real.**
+
 ## Consequences
 
 - Two places to change when a policy changes. Accepted; the alternative is a single point of

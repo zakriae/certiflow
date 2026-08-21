@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Shared MassTransit host configuration, on the same footing as Certiflow.Persistence,
+    Certiflow.Http and Certiflow.Cqrs: Infrastructure plumbing every service needs, holding no
+    business concept.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Messaging</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
+    <PackageReference Include="Azure.Identity" />
+  </ItemGroup>
+
+</Project>

@@ -29,6 +29,8 @@
          boundary, never spoken by the domain or the application layer (ADR-0004). -->
     <ProjectReference Include="../../../shared/Certiflow.Contracts/Certiflow.Contracts.csproj" />
     <ProjectReference Include="../../../shared/Certiflow.Persistence/Certiflow.Persistence.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Storage/Certiflow.Storage.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Messaging/Certiflow.Messaging.csproj" />
   </ItemGroup>
 
 </Project>

@@ -48,6 +48,19 @@ param sqlAdminLogin string
 @description('Container image tag to deploy. The CD workflow passes the commit sha.')
 param imageTag string = 'latest'
 
+@description('''
+Whether to create the container apps.
+
+Deployment is two passes, and this is what separates them. The registry has to exist before images
+can be pushed to it, and the images have to exist before a container app can pull one - so the first
+pass builds everything except the apps, the images are pushed, and the second pass creates the apps.
+
+A single pass was tried and does not work: Container Apps does not create a pending revision and
+wait for the image, it fails the deployment outright with a pull error, taking every app in the
+module with it.
+''')
+param deployApps bool = true
+
 var suffix = '${environmentName}-${uniqueString(resourceGroup().id)}'
 var tags = {
   application: 'certiflow'
@@ -79,6 +92,7 @@ module data 'modules/data.bicep' = {
   name: 'data'
   params: {
     suffix: suffix
+    environmentName: environmentName
     location: location
     tags: tags
     sqlAdminObjectId: sqlAdminObjectId
@@ -95,10 +109,11 @@ module messaging 'modules/messaging.bicep' = {
   }
 }
 
-module apps 'modules/apps.bicep' = {
+module apps 'modules/apps.bicep' = if (deployApps) {
   name: 'apps'
   params: {
     suffix: suffix
+    environmentName: environmentName
     location: location
     tags: tags
     imageTag: imageTag
@@ -125,17 +140,21 @@ resource existingOpenAi 'Microsoft.CognitiveServices/accounts@2024-10-01' existi
 }
 
 // Deployed into the OpenAI account's resource group, because that is where the role assignment has
-// to live.
-module openAiAccess 'modules/openai-access.bicep' = {
+// to live. Skipped on the first pass, because it needs the worker identity the apps module creates.
+module openAiAccess 'modules/openai-access.bicep' = if (deployApps) {
   name: 'openai-access'
   scope: resourceGroup(openAiResourceGroup)
   params: {
-    workerPrincipalId: apps.outputs.workerPrincipalId
+    // `!` rather than `.?`: both modules share the same condition, so if this one is being
+    // deployed the apps module certainly was. Bicep cannot infer that, but it is true by construction.
+    workerPrincipalId: apps!.outputs.workerPrincipalId
     openAiAccountName: openAiAccountName
   }
 }
 
-output gatewayUrl string = apps.outputs.gatewayUrl
+// `.?` because the module is conditional: without it Bicep warns that the access may run
+// against a null module at the start of the deployment.
+output gatewayUrl string = apps.?outputs.gatewayUrl ?? ''
 output registryLoginServer string = registry.outputs.loginServer
 output sqlServerName string = data.outputs.sqlServerName
 output sqlDatabaseName string = data.outputs.sqlDatabaseName

@@ -1,3 +1,4 @@
+using Certiflow.Messaging;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Azure.Storage.Blobs;
@@ -46,7 +47,18 @@ public static class DependencyInjection
         });
 
         services.AddSingleton(provider =>
-            new BlobServiceClient(configuration.GetConnectionString("Storage")));
+        {
+            // Same two-mode construction as the intake and reporting stores: a service URI means
+            // managed identity, a connection string means Azurite. This one was missed when the
+            // other two were fixed, and it is the reason extraction faulted in Azure while every
+            // other part of the chain worked - the worker could consume DocumentStored and then had
+            // no way to fetch the document it described.
+            var serviceUri = configuration["Storage:ServiceUri"];
+
+            return string.IsNullOrWhiteSpace(serviceUri)
+                ? new BlobServiceClient(configuration.GetConnectionString("Storage"))
+                : new BlobServiceClient(new Uri(serviceUri), new DefaultAzureCredential());
+        });
 
         services.AddSingleton<IDocumentTextParser, PdfPigDocumentTextParser>();
         services.AddSingleton<IDocumentTypeSchemaProvider, EmbeddedSchemaProvider>();
@@ -87,7 +99,7 @@ public static class DependencyInjection
             {
                 bus.UsingAzureServiceBus((context, configurator) =>
                 {
-                    configurator.Host(serviceBus);
+                    configurator.UseCertiflowHost(serviceBus);
                     configurator.ConfigureEndpoints(context);
                 });
 

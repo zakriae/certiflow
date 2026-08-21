@@ -78,6 +78,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.19" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.19" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.1" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
   <ItemGroup Label="Documents">
