@@ -14,12 +14,39 @@ public sealed class IntelligenceDbContext(DbContextOptions<IntelligenceDbContext
 
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
 
+    /// <summary>Read models fed by the registry's events - see <see cref="SupplierRecord"/>.</summary>
+    public DbSet<SupplierRecord> Suppliers => Set<SupplierRecord>();
+
+    public DbSet<RequirementRecord> Requirements => Set<RequirementRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfiguration(new ExtractionJobConfiguration());
+        modelBuilder.Entity<SupplierRecord>(supplier =>
+        {
+            supplier.ToTable("suppliers");
+            supplier.HasKey(s => s.SupplierId);
+            supplier.Property(s => s.SupplierId).HasColumnName("supplier_id").ValueGeneratedNever();
+            supplier.Property(s => s.LegalName).HasColumnName("legal_name").HasMaxLength(200).IsRequired();
+            supplier.Property(s => s.TradingName).HasColumnName("trading_name").HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<RequirementRecord>(requirement =>
+        {
+            requirement.ToTable("requirements");
+            requirement.HasKey(r => r.RequirementId);
+            requirement.Property(r => r.RequirementId).HasColumnName("requirement_id").ValueGeneratedNever();
+            requirement.Property(r => r.CategoryId).HasColumnName("category_id");
+            requirement.Property(r => r.DocumentType).HasColumnName("document_type").HasMaxLength(100).IsRequired();
+            requirement.Property(r => r.RequiresIssuerMatch).HasColumnName("requires_issuer_match");
+            requirement.Property(r => r.AcceptedIssuersPacked).HasColumnName("accepted_issuers").HasMaxLength(2000).IsRequired();
+            requirement.Property(r => r.AutoAcceptThreshold).HasColumnName("auto_accept_threshold").HasPrecision(3, 2);
+            requirement.Ignore(r => r.AcceptedIssuers);
+        });
+
         modelBuilder.AddMessagingTables();
     }
 }

@@ -16,12 +16,26 @@ public sealed class VerificationDbContext(DbContextOptions<VerificationDbContext
 
     public DbSet<InboxMessage> Inbox => Set<InboxMessage>();
 
+    /// <summary>Document metadata from Intake - see <see cref="DocumentRecord"/>.</summary>
+    public DbSet<DocumentRecord> Documents => Set<DocumentRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfiguration(new ReviewTaskConfiguration());
+        modelBuilder.Entity<DocumentRecord>(document =>
+        {
+            document.ToTable("documents");
+            document.HasKey(d => d.DocumentId);
+            document.Property(d => d.DocumentId).HasColumnName("document_id").ValueGeneratedNever();
+            document.Property(d => d.SupplierId).HasColumnName("supplier_id");
+            document.Property(d => d.FileName).HasColumnName("file_name").HasMaxLength(260).IsRequired();
+            document.Property(d => d.UploadedBy).HasColumnName("uploaded_by").HasMaxLength(256).IsRequired();
+            document.Property(d => d.StoredAt).HasColumnName("stored_at");
+        });
+
         modelBuilder.AddMessagingTables();
     }
 }

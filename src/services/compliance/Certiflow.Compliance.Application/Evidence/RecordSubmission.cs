@@ -23,7 +23,7 @@ public sealed class RecordSubmissionValidator : AbstractValidator<RecordSubmissi
 }
 
 public sealed class RecordSubmissionHandler(
-    ISupplierComplianceRepository repository,
+    ComplianceStateLoader loader,
     IUnitOfWork unitOfWork,
     IClock clock) : IRequestHandler<RecordSubmissionCommand>
 {
@@ -31,8 +31,7 @@ public sealed class RecordSubmissionHandler(
     {
         var supplierId = new SupplierId(command.SupplierId);
 
-        var state = await repository.FindAsync(supplierId, cancellationToken)
-            ?? throw new SupplierComplianceStateNotFoundException(supplierId);
+        var state = await loader.LoadAsync(supplierId, cancellationToken);
 
         state.RecordSubmission(
             new RequirementId(command.RequirementId),
@@ -60,7 +59,7 @@ public sealed class ClearSubmissionValidator : AbstractValidator<ClearSubmission
 }
 
 public sealed class ClearSubmissionHandler(
-    ISupplierComplianceRepository repository,
+    ComplianceStateLoader loader,
     IUnitOfWork unitOfWork,
     IClock clock) : IRequestHandler<ClearSubmissionCommand>
 {
@@ -68,8 +67,7 @@ public sealed class ClearSubmissionHandler(
     {
         var supplierId = new SupplierId(command.SupplierId);
 
-        var state = await repository.FindAsync(supplierId, cancellationToken)
-            ?? throw new SupplierComplianceStateNotFoundException(supplierId);
+        var state = await loader.LoadAsync(supplierId, cancellationToken);
 
         state.ClearSubmission(new RequirementId(command.RequirementId), clock.Today, clock.UtcNow);
 

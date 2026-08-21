@@ -79,6 +79,8 @@ public static class DependencyInjection
         services.AddMassTransit(bus =>
         {
             bus.AddConsumer<DocumentStoredConsumer>();
+            bus.AddConsumer<SupplierRegisteredIntelligenceConsumer>();
+            bus.AddConsumer<ProfilePublishedIntelligenceConsumer>();
             bus.SetKebabCaseEndpointNameFormatter();
 
             if (!string.IsNullOrWhiteSpace(serviceBus))

@@ -89,6 +89,17 @@ Then upload against that supplier and requirement, resolve the fields, approve, 
 status walk `NonCompliant → Pending → Compliant` on
 `GET /api/suppliers/{id}/compliance`. Nothing touches a database directly at any point.
 
+### Resetting between runs
+
+```bash
+bash scripts/reset-local.sh
+```
+
+Purges RabbitMQ **and** drops every schema. Purging the broker is not optional: dropping the
+databases alone leaves the previous run's messages queued, and they redeliver against an empty
+database and interleave with the new run's events. The symptom is obligations referencing
+requirement ids that exist nowhere, and it has nothing to do with the code.
+
 ### When a context gains a table
 
 The dev bootstrap creates a schema that is *missing*; it cannot evolve one that already exists.

@@ -17,7 +17,9 @@ public sealed class RecordApprovedEvidenceHandlerTests
 
     private readonly FixedClock _clock = new(Now);
 
-    private RecordApprovedEvidenceHandler Handler => new(_repository, _unitOfWork, _clock);
+    private readonly InMemoryProfileStore _profiles = new();
+
+    private RecordApprovedEvidenceHandler Handler => new(Loader(_repository, _profiles, _clock), _unitOfWork, _clock);
 
     private static RecordApprovedEvidenceCommand Command(Guid? documentId = null, int expiresInDays = 400) =>
         new(
@@ -110,11 +112,13 @@ public sealed class SubmissionHandlerTests
 
     private readonly FixedClock _clock = new(Now);
 
+    private readonly InMemoryProfileStore _profiles = new();
+
     [Fact]
     public async Task A_submission_moves_the_obligation_to_awaiting_review()
     {
         _repository.Seed(RegisteredWithProfile());
-        var handler = new RecordSubmissionHandler(_repository, _unitOfWork, _clock);
+        var handler = new RecordSubmissionHandler(Loader(_repository, _profiles, _clock), _unitOfWork, _clock);
 
         await handler.Handle(new RecordSubmissionCommand(SupplierGuid, RequirementGuid, DocumentGuid), CancellationToken.None);
 
@@ -126,10 +130,10 @@ public sealed class SubmissionHandlerTests
     public async Task A_rejection_returns_the_obligation_to_missing()
     {
         _repository.Seed(RegisteredWithProfile());
-        await new RecordSubmissionHandler(_repository, _unitOfWork, _clock)
+        await new RecordSubmissionHandler(Loader(_repository, _profiles, _clock), _unitOfWork, _clock)
             .Handle(new RecordSubmissionCommand(SupplierGuid, RequirementGuid, DocumentGuid), CancellationToken.None);
 
-        await new ClearSubmissionHandler(_repository, _unitOfWork, _clock)
+        await new ClearSubmissionHandler(Loader(_repository, _profiles, _clock), _unitOfWork, _clock)
             .Handle(new ClearSubmissionCommand(SupplierGuid, RequirementGuid), CancellationToken.None);
 
         _repository.All.Single().FindObligation(Requirement)!.Status
@@ -139,7 +143,7 @@ public sealed class SubmissionHandlerTests
     [Fact]
     public async Task A_submission_for_an_unknown_supplier_is_retried()
     {
-        var handler = new RecordSubmissionHandler(_repository, _unitOfWork, _clock);
+        var handler = new RecordSubmissionHandler(Loader(_repository, _profiles, _clock), _unitOfWork, _clock);
 
         var act = async () => await handler.Handle(
             new RecordSubmissionCommand(SupplierGuid, RequirementGuid, DocumentGuid), CancellationToken.None);

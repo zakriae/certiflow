@@ -20,8 +20,10 @@ public sealed class ExpiryWatchHandlerTests
 
     private readonly FixedClock _clock = new(Now);
 
+    private readonly InMemoryProfileStore _profiles = new();
+
     private RunExpiryWatchHandler Handler =>
-        new(_repository, _unitOfWork, _clock, NullLogger<RunExpiryWatchHandler>.Instance);
+        new(_repository, Loader(_repository, _profiles, _clock), _unitOfWork, _clock, NullLogger<RunExpiryWatchHandler>.Instance);
 
     /// <summary>A compliant supplier whose only certificate expires in <paramref name="days"/>.</summary>
     private static SupplierComplianceState CompliantUntil(int days, Guid? supplierId = null)
@@ -126,7 +128,11 @@ public sealed class ExpiryWatchHandlerTests
         _clock.Advance(TimeSpan.FromDays(2));
 
         var handler = new RunExpiryWatchHandler(
-            repository, _unitOfWork, _clock, NullLogger<RunExpiryWatchHandler>.Instance);
+            repository,
+            new ComplianceStateLoader(repository, _profiles, _clock),
+            _unitOfWork,
+            _clock,
+            NullLogger<RunExpiryWatchHandler>.Instance);
 
         var result = await handler.Handle(new RunExpiryWatchCommand(), CancellationToken.None);
 

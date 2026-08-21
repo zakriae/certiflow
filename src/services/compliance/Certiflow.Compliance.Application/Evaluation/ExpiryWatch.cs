@@ -16,7 +16,7 @@ public sealed class EvaluateSupplierValidator : AbstractValidator<EvaluateSuppli
 }
 
 public sealed class EvaluateSupplierHandler(
-    ISupplierComplianceRepository repository,
+    ComplianceStateLoader loader,
     IUnitOfWork unitOfWork,
     IClock clock) : IRequestHandler<EvaluateSupplierCommand>
 {
@@ -24,8 +24,7 @@ public sealed class EvaluateSupplierHandler(
     {
         var supplierId = new SupplierId(command.SupplierId);
 
-        var state = await repository.FindAsync(supplierId, cancellationToken)
-            ?? throw new SupplierComplianceStateNotFoundException(supplierId);
+        var state = await loader.LoadAsync(supplierId, cancellationToken);
 
         state.Evaluate(clock.Today, clock.UtcNow);
 
@@ -44,6 +43,7 @@ public sealed record RunExpiryWatchCommand : IRequest<ExpiryWatchResult>;
 
 public sealed class RunExpiryWatchHandler(
     ISupplierComplianceRepository repository,
+    ComplianceStateLoader loader,
     IUnitOfWork unitOfWork,
     IClock clock,
     ILogger<RunExpiryWatchHandler> logger) : IRequestHandler<RunExpiryWatchCommand, ExpiryWatchResult>
@@ -63,12 +63,9 @@ public sealed class RunExpiryWatchHandler(
 
             try
             {
-                var state = await repository.FindAsync(supplierId, cancellationToken);
-
-                if (state is null)
-                {
-                    continue;
-                }
+                // Loaded through the reconciling loader, so the nightly sweep also repairs any
+                // supplier whose obligations were lost to the registration/publication race.
+                var state = await loader.LoadAsync(supplierId, cancellationToken);
 
                 state.Evaluate(today, now);
 

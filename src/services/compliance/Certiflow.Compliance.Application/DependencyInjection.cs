@@ -28,6 +28,7 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: false);
+        services.AddScoped<Abstractions.ComplianceStateLoader>();
 
         return services;
     }

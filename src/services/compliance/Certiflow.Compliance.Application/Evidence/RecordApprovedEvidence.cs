@@ -47,7 +47,7 @@ public sealed class RecordApprovedEvidenceValidator : AbstractValidator<RecordAp
 }
 
 public sealed class RecordApprovedEvidenceHandler(
-    ISupplierComplianceRepository repository,
+    ComplianceStateLoader loader,
     IUnitOfWork unitOfWork,
     IClock clock) : IRequestHandler<RecordApprovedEvidenceCommand>
 {
@@ -57,8 +57,7 @@ public sealed class RecordApprovedEvidenceHandler(
         var requirementId = new RequirementId(command.RequirementId);
         var documentId = new DocumentId(command.DocumentId);
 
-        var state = await repository.FindAsync(supplierId, cancellationToken)
-            ?? throw new SupplierComplianceStateNotFoundException(supplierId);
+        var state = await loader.LoadAsync(supplierId, cancellationToken);
 
         // The aggregate refuses to attach the same document twice, which is right — but on a
         // redelivery that would throw forever and dead-letter a message that was already handled

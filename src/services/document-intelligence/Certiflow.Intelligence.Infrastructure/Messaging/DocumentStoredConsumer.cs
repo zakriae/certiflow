@@ -62,23 +62,41 @@ public sealed class DocumentStoredConsumer(
 
         await using var content = await blob.OpenReadAsync(cancellationToken: cancellationToken);
 
+        // The supplier and requirement come from this service's own copy of the registry's data.
+        // If either is missing the events have not arrived yet, so the message is retried rather
+        // than scored against nothing - a wrong supplier name would silently disable the
+        // entity-match check instead of failing visibly.
+        var supplier = await database.Suppliers
+            .FirstOrDefaultAsync(s => s.SupplierId == message.SupplierId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Supplier {message.SupplierId} is not known to Document Intelligence yet.");
+
+        var requirement = message.RequirementId is { } requirementId
+            ? await database.Requirements.FirstOrDefaultAsync(r => r.RequirementId == requirementId, cancellationToken)
+            : null;
+
         var request = new ExtractionRequest(
             new DocumentId(message.DocumentId),
             new SupplierId(message.SupplierId),
             new RequirementId(message.RequirementId ?? Guid.Empty),
             schema,
-            // Supplier name and accepted issuers belong to BC1 and arrive via its events. Until
-            // that read model exists the entity-match signal is scored against what this service
-            // knows, which is the document's own claim - so it passes and contributes nothing
-            // misleading. Wiring the real values is what turns the check back on.
             new ExtractionContext(
-                supplierLegalName: message.FileName,
-                supplierTradingName: null,
-                acceptedIssuers: [],
-                requiresIssuerMatch: false,
+                supplierLegalName: supplier.LegalName,
+                supplierTradingName: supplier.TradingName,
+                acceptedIssuers: requirement?.AcceptedIssuers ?? [],
+                // Only demanded when the requirement says so and actually lists issuers - the
+                // aggregate refuses a context that demands a match with nothing to match against.
+                requiresIssuerMatch: requirement is { RequiresIssuerMatch: true }
+                                     && requirement.AcceptedIssuers.Count > 0,
+                // Left null deliberately. A requirement names a document type ("ISO 9001") while a
+                // certificate names an edition ("ISO 9001:2015"), so the two are not comparable as
+                // strings and asserting a match on them would fail every honest certificate.
+                // Matching family-to-edition is a real check worth adding; guessing at it here
+                // would be worse than not making the claim.
                 expectedStandard: null,
                 today: DateOnly.FromDateTime(DateTime.UtcNow)),
-            Confidence.FromScore(0.85m));
+            // Per requirement, not a global constant (FR-5.6).
+            Confidence.FromScore(requirement?.AutoAcceptThreshold ?? 0.85m));
 
         var outcome = await pipeline.RunAsync(request, content, cancellationToken);
 

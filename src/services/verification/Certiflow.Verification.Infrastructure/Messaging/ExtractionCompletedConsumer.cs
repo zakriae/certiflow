@@ -45,11 +45,13 @@ public sealed class ExtractionCompletedConsumer(
                 message.SupplierId,
                 message.RequirementId,
                 message.DocumentType,
-                // The uploader travels on DocumentStored, not here. Until BC4 keeps its own
-                // record of it, segregation of duties is enforced against a placeholder - which
-                // means the rule is live in the aggregate but toothless in this path. Wiring the
-                // real uploader is what turns it back on, and it is the last gap in FR-4.7.
-                UploadedBy: "supplier@certiflow.demo",
+                // The real uploader, from Intake's DocumentStored. Falling back to a placeholder
+                // would quietly disable segregation of duties, so a missing record throws and the
+                // message retries until DocumentStored has been processed.
+                UploadedBy: (await database.Documents
+                    .FirstOrDefaultAsync(d => d.DocumentId == message.DocumentId, cancellationToken))?.UploadedBy
+                    ?? throw new InvalidOperationException(
+                        $"Document {message.DocumentId} has not been recorded by Verification yet."),
                 message.OverallConfidence,
                 message.AutoAcceptable,
                 hadGroundingFailure,
@@ -72,6 +74,31 @@ public sealed class ExtractionCompletedConsumer(
         field.CitationPage,
         field.CitationSnippet,
         ScoringNote: field.GroundingResult == "Verified" ? null : $"Grounding: {field.GroundingResult}");
+}
+
+/// <summary>
+/// Records document metadata so a review task can be raised against the real uploader.
+/// </summary>
+public sealed class DocumentStoredVerificationConsumer(VerificationDbContext database)
+    : IConsumer<DocumentStored>
+{
+    public async Task Consume(ConsumeContext<DocumentStored> context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var message = context.Message;
+        var cancellationToken = context.CancellationToken;
+
+        if (await database.Documents.AnyAsync(d => d.DocumentId == message.DocumentId, cancellationToken))
+        {
+            return;
+        }
+
+        database.Documents.Add(new DocumentRecord(
+            message.DocumentId, message.SupplierId, message.FileName, message.UploadedBy, DateTimeOffset.UtcNow));
+
+        await database.SaveChangesAsync(cancellationToken);
+    }
 }
 
 /// <summary>

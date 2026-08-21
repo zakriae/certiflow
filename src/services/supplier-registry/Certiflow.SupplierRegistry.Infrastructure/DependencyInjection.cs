@@ -1,40 +1,41 @@
 using Certiflow.Persistence;
-using Certiflow.Verification.Application.Abstractions;
-using Certiflow.Verification.Infrastructure.Messaging;
-using Certiflow.Verification.Infrastructure.Persistence;
 using Certiflow.SharedKernel;
+using Certiflow.SupplierRegistry.Application.Abstractions;
+using Certiflow.SupplierRegistry.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Certiflow.Verification.Infrastructure;
+namespace Certiflow.SupplierRegistry.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddVerificationInfrastructure(
+    public static IServiceCollection AddRegistryInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddDbContext<VerificationDbContext>(options =>
+        services.AddDbContext<RegistryDbContext>(options =>
             options.UseSqlServer(
-                configuration.GetConnectionString("VerificationDatabase"),
+                configuration.GetConnectionString("RegistryDatabase"),
                 sql =>
                 {
-                    sql.MigrationsHistoryTable("__migrations", VerificationDbContext.Schema);
+                    sql.MigrationsHistoryTable("__migrations", RegistryDbContext.Schema);
                     sql.EnableRetryOnFailure();
                 }));
 
         services.AddSingleton<IClock, SystemClock>();
-        services.AddScoped<IReviewTaskRepository, ReviewTaskRepository>();
-        services.AddScoped<IUnitOfWork, VerificationUnitOfWork>();
+        services.AddScoped<ISupplierRepository, SupplierRepository>();
+        services.AddScoped<IComplianceProfileRepository, ComplianceProfileRepository>();
+        services.AddScoped<IUnitOfWork, RegistryUnitOfWork>();
 
         return services;
     }
 
-    public static IServiceCollection AddVerificationMessaging(
+    /// <summary>Publishing only — the registry is upstream and consumes nothing.</summary>
+    public static IServiceCollection AddRegistryMessaging(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -44,9 +45,6 @@ public static class DependencyInjection
 
         services.AddMassTransit(bus =>
         {
-            bus.AddConsumer<DocumentStoredVerificationConsumer>();
-            bus.AddConsumer<ExtractionCompletedConsumer>();
-            bus.AddConsumer<DocumentSupersededConsumer>();
             bus.SetKebabCaseEndpointNameFormatter();
 
             if (!string.IsNullOrWhiteSpace(serviceBus))
@@ -65,15 +63,12 @@ public static class DependencyInjection
                 configurator.Host(
                     configuration.GetConnectionString("RabbitMq") ?? "amqp://guest:guest@localhost:5672");
 
-                configurator.UseMessageRetry(retry => retry.Intervals(
-                    TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15)));
-
                 configurator.ConfigureEndpoints(context);
             });
         });
 
         services.Configure<OutboxDispatcherOptions>(configuration.GetSection(OutboxDispatcherOptions.SectionName));
-        services.AddOutboxDispatcher<VerificationDbContext>();
+        services.AddOutboxDispatcher<RegistryDbContext>();
 
         return services;
     }

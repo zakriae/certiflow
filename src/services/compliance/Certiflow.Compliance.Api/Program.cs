@@ -1,22 +1,21 @@
 using Certiflow.Compliance.Application.Abstractions;
 using Certiflow.Compliance.Application.Evaluation;
-using Certiflow.Compliance.Application.Suppliers;
 using Certiflow.Compliance.Domain;
 using Certiflow.Compliance.Infrastructure;
 using Certiflow.Compliance.Infrastructure.Persistence;
 using Certiflow.Http;
 using Certiflow.Persistence;
 using Certiflow.SharedKernel;
-using FluentValidation;
+using Certiflow.Compliance.Application;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediatR(configuration =>
-    configuration.RegisterServicesFromAssembly(typeof(RunExpiryWatchCommand).Assembly));
-
-builder.Services.AddValidatorsFromAssembly(typeof(RunExpiryWatchCommand).Assembly);
+// The application layer registers its own handlers, validators, pipeline and the state loader.
+// Registering MediatR by hand here is how the loader went missing and every handler failed to
+// resolve at startup - the extension exists precisely so the host does not have to know.
+builder.Services.AddComplianceApplication();
 builder.Services.AddComplianceInfrastructure(builder.Configuration);
 builder.Services.AddComplianceMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
@@ -141,39 +140,4 @@ app.MapGet("/api/suppliers/{id:guid}/compliance", async (
 app.MapPost("/api/expiry-watch", async (ISender sender, CancellationToken cancellationToken) =>
     Results.Ok(await sender.Send(new RunExpiryWatchCommand(), cancellationToken)));
 
-// ── Standing in for BC1 ─────────────────────────────────────────────────────────────────────────
-// Supplier registration and profile publication belong to the Supplier Registry and reach this
-// service as integration events. BC1 has no application layer yet, and the approved scope cut
-// seeds administrative data rather than building CRUD screens for it - so the seeder posts here.
-// These call the same handlers the consumers do, so the seeded path and the event path cannot
-// diverge.
-app.MapPost("/api/registry-sync/suppliers", async (
-    RegisterSupplierRequest request,
-    ISender sender,
-    CancellationToken cancellationToken) =>
-{
-    await sender.Send(new RegisterSupplierComplianceCommand(request.SupplierId, request.CategoryId), cancellationToken);
-
-    return Results.Accepted($"/api/suppliers/{request.SupplierId}/compliance");
-});
-
-app.MapPost("/api/registry-sync/profiles", async (
-    PublishProfileRequest request,
-    ISender sender,
-    CancellationToken cancellationToken) =>
-{
-    await sender.Send(
-        new ApplyProfileVersionCommand(request.CategoryId, request.ProfileVersion, request.Requirements),
-        cancellationToken);
-
-    return Results.NoContent();
-});
-
 app.Run();
-
-internal sealed record RegisterSupplierRequest(Guid SupplierId, Guid CategoryId);
-
-internal sealed record PublishProfileRequest(
-    Guid CategoryId,
-    int ProfileVersion,
-    IReadOnlyList<RequirementDefinition> Requirements);

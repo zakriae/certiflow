@@ -107,4 +107,13 @@ internal static class Fixture
     }
 
     public static IUnitOfWork SilentUnitOfWork() => Substitute.For<IUnitOfWork>();
+
+    /// <summary>
+    /// The loader the handlers take. Real, not a substitute: reconciling a stale profile on load is
+    /// behaviour these tests depend on, so stubbing it out would test the wrong thing.
+    /// </summary>
+    public static ComplianceStateLoader Loader(
+        InMemoryComplianceRepository repository,
+        InMemoryProfileStore profiles,
+        FixedClock clock) => new(repository, profiles, clock);
 }
