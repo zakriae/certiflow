@@ -75,7 +75,9 @@ public sealed class Report : AggregateRoot<ReportId>
         ArgumentNullException.ThrowIfNull(storage);
         Guard.AgainstNullOrWhiteSpace(verificationHash, "reporting.report.verification_hash_required");
 
-        if (Status is not (ReportStatus.Generating or ReportStatus.Requested))
+        // Generating only. Allowing Requested here would let a caller produce an artefact for a
+        // job that was never claimed, which is precisely the window Start exists to close.
+        if (Status != ReportStatus.Generating)
         {
             throw new DomainRuleViolationException(
                 "reporting.report.not_in_progress",

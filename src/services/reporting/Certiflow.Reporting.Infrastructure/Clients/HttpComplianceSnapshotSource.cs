@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Certiflow.Reporting.Application.Abstractions;
 using Certiflow.Reporting.Domain;
+using Certiflow.SharedKernel;
 
 namespace Certiflow.Reporting.Infrastructure.Clients;
 
@@ -23,7 +24,7 @@ namespace Certiflow.Reporting.Infrastructure.Clients;
 /// asynchronous (FR-6.4) the caller sees a failed job with a reason, not a 500.
 /// </para>
 /// </summary>
-public sealed class HttpComplianceSnapshotSource(IHttpClientFactory factory) : IComplianceSnapshotSource
+public sealed class HttpComplianceSnapshotSource(IHttpClientFactory factory, IClock clock) : IComplianceSnapshotSource
 {
     public const string ComplianceClient = "compliance";
 
@@ -57,7 +58,10 @@ public sealed class HttpComplianceSnapshotSource(IHttpClientFactory factory) : I
             categoryName,
             compliance.ProfileVersion,
             compliance.OverallStatus,
-            DateOnly.FromDateTime(DateTime.UtcNow),
+            // From the injected clock, not the wall clock. AsOf is part of the hashed form, so
+            // reading the machine's time here would put an untestable value inside the one thing
+            // the report is supposed to let you check.
+            clock.Today,
             [.. compliance.Obligations.Select(Map)]);
     }
 

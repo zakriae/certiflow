@@ -110,3 +110,39 @@ public sealed class ReportTests
             .Which.Rule.Should().Be("reporting.report.requested_by_required");
     }
 }
+
+public sealed class ReportStateMachineTests
+{
+    private static readonly SupplierId Supplier = new(Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001"));
+
+    private static readonly DateTimeOffset Now = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+
+    [Fact]
+    public void A_report_cannot_be_completed_without_first_being_claimed()
+    {
+        // Start is what marks a job as taken. Completing straight from Requested would let a second
+        // worker produce an artefact for a job another worker is already rendering.
+        var report = Report.Request(ReportType.SupplierComplianceCertificate, Supplier, "buyer@certiflow.demo", Now);
+
+        var act = () => report.Complete(StorageReference.Create("reports", "a.pdf"), "abc123", Now);
+
+        act.Should().Throw<DomainRuleViolationException>()
+            .Which.Rule.Should().Be("reporting.report.not_in_progress");
+    }
+
+    [Fact]
+    public void A_failed_report_is_terminal_and_is_retried_by_requesting_a_new_one()
+    {
+        var report = Report.Request(ReportType.SupplierComplianceCertificate, Supplier, "buyer@certiflow.demo", Now);
+        report.Start();
+        report.Fail("compliance unreachable", Now);
+
+        var act = () => report.Start();
+
+        // A failed job stays failed. Retrying means POSTing a new request, which is the same rule
+        // FR-6.5 applies to successful ones: every run is its own report with its own id and its
+        // own fingerprint. Reviving this row would give one id two different histories.
+        act.Should().Throw<DomainRuleViolationException>()
+            .Which.Rule.Should().Be("reporting.report.already_started");
+    }
+}
