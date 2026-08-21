@@ -1,3 +1,4 @@
+using Certiflow.Cqrs;
 using Certiflow.Http;
 using Certiflow.Persistence;
 using Certiflow.SupplierRegistry.Application.Suppliers;
@@ -10,16 +11,20 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediatR(c => c.RegisterServicesFromAssembly(typeof(RegisterSupplierCommand).Assembly));
-builder.Services.AddValidatorsFromAssembly(typeof(RegisterSupplierCommand).Assembly);
+builder.Services.AddCertiflowMediator(typeof(RegisterSupplierCommand).Assembly);
 builder.Services.AddRegistryInfrastructure(builder.Configuration);
 builder.Services.AddRegistryMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -28,7 +33,7 @@ if (app.Environment.IsDevelopment())
     await database.EnsureSchemaAsync(RegistryDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "registry" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "registry" })).AllowAnonymous();
 
 // Registering a supplier with a category activates it, which is what tells Compliance to start
 // tracking obligations for it. The seeder calls this; the approved scope cut builds no admin UI.

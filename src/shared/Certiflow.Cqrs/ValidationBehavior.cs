@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
 
-namespace Certiflow.Compliance.Application.Behaviors;
+namespace Certiflow.Cqrs;
 
 /// <summary>
 /// Runs every registered <see cref="IValidator{T}"/> for a request before its handler.
@@ -16,6 +16,14 @@ namespace Certiflow.Compliance.Application.Behaviors;
 /// aggregate throws <c>DomainRuleViolationException</c> for it, which maps to 409 instead. Both
 /// layers exist deliberately (tech-stack doc §3).
 /// </para>
+/// <para>
+/// <b>Shared because it was not.</b> This lived in Compliance, and Compliance was the only service
+/// that registered it — so the validators in Registry, Intake, Verification and Reporting were
+/// written, tested by nobody, and never executed. Publishing a compliance profile with an empty
+/// requirement list sailed through a <c>RuleFor(c => c.Requirements).NotEmpty()</c> that was never
+/// asked. A behaviour every Application layer needs belongs where every Application layer can see
+/// it, and registering it belongs in one shared call rather than four remembered ones.
+/// </para>
 /// </summary>
 public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
@@ -26,6 +34,8 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(next);
+
         var applicable = validators as IValidator<TRequest>[] ?? [.. validators];
 
         // MediatR 12's RequestHandlerDelegate takes no arguments — the cancellation-token overload

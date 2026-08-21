@@ -47,6 +47,15 @@ public static class DependencyInjection
         AddServiceClient(services, HttpComplianceSnapshotSource.RegistryClient,
             configuration["Services:Registry"] ?? "http://localhost:5270");
 
+        // Not itself token-bearing, or it would need a token to get a token.
+        services.AddHttpClient(ServiceTokenHandler.TokenClient, client =>
+        {
+            client.BaseAddress = new Uri(configuration["Auth:Authority"] ?? "http://localhost:5000");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
+        services.AddTransient<ServiceTokenHandler>();
+
         services.AddHostedService<OutboxDispatcher<ReportingDbContext>>();
 
         return services;
@@ -57,7 +66,11 @@ public static class DependencyInjection
         {
             client.BaseAddress = new Uri(baseAddress);
             client.Timeout = TimeSpan.FromSeconds(10);
-        });
+        })
+        // Every outbound call carries the service identity. Without it these are anonymous, and
+        // every service validates JWTs now - so a report would fail with a 401 that reads like a
+        // configuration mistake rather than a missing identity.
+        .AddHttpMessageHandler<ServiceTokenHandler>();
 
     public static IServiceCollection AddReportingMessaging(
         this IServiceCollection services,

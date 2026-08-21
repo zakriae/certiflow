@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Shared MediatR plumbing, on the same footing as Certiflow.Persistence and Certiflow.Http: it is
+    Infrastructure that every Application layer needs, and it may never hold a business concept.
+    It cannot live in Certiflow.SharedKernel, which deliberately has zero NuGet dependencies.
+  -->
+
   <PropertyGroup>
-    <RootNamespace>Certiflow.Verification.Application</RootNamespace>
+    <RootNamespace>Certiflow.Cqrs</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,12 +15,6 @@
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
-    <ProjectReference Include="../Certiflow.Verification.Domain/Certiflow.Verification.Domain.csproj" />
   </ItemGroup>
 
 </Project>

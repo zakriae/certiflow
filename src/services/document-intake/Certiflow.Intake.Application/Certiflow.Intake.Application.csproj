@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
     <ProjectReference Include="../Certiflow.Intake.Domain/Certiflow.Intake.Domain.csproj" />
   </ItemGroup>
 

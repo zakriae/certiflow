@@ -19,11 +19,16 @@ builder.Services.AddComplianceApplication();
 builder.Services.AddComplianceInfrastructure(builder.Configuration);
 builder.Services.AddComplianceMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -32,7 +37,7 @@ if (app.Environment.IsDevelopment())
     await database.EnsureSchemaAsync(ComplianceDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "compliance" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "compliance" })).AllowAnonymous();
 
 // ── Portfolio dashboard (FR-5.3) ────────────────────────────────────────────────────────────────
 // Counts come from the persisted status column rather than by loading every aggregate: NFR-2 gives

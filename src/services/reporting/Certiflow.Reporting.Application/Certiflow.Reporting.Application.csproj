@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
     <ProjectReference Include="../Certiflow.Reporting.Domain/Certiflow.Reporting.Domain.csproj" />
   </ItemGroup>
 

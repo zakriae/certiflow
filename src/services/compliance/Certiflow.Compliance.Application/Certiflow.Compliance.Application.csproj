@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
     <ProjectReference Include="../Certiflow.Compliance.Domain/Certiflow.Compliance.Domain.csproj" />
   </ItemGroup>
 

@@ -49,6 +49,19 @@ public sealed class DomainExceptionHandler(ILogger<DomainExceptionHandler> logge
 
                 return true;
 
+            case IResourceNotFound notFound:
+                // 404, not 500. "That id does not exist" is a normal answer to a normal question,
+                // and reporting it as a server fault buries real failures in noise.
+                await WriteAsync(
+                    httpContext,
+                    StatusCodes.Status404NotFound,
+                    title: "The requested resource was not found.",
+                    detail: ((Exception)notFound).Message,
+                    extensions: new Dictionary<string, object?>(),
+                    cancellationToken);
+
+                return true;
+
             case ValidationException validation:
                 await WriteAsync(
                     httpContext,
@@ -118,14 +131,21 @@ public static class DomainExceptionHandlerRegistration
     public static IServiceCollection AddCertiflowProblemDetails(this IServiceCollection services)
     {
         services.AddProblemDetails();
+
+        // Kept as a backstop for anything that reaches the outer handler without passing through
+        // DomainErrorMiddleware - a domain exception thrown by a filter or by the endpoint routing
+        // itself, before the middleware is on the stack.
         services.AddExceptionHandler<DomainExceptionHandler>();
 
         return services;
     }
 }
 
-internal static partial class HttpLog
+public static partial class HttpLog
 {
     [LoggerMessage(EventId = 9020, Level = LogLevel.Information, Message = "Refused by rule {Rule}: {Reason}")]
     public static partial void RuleRefused(ILogger logger, string rule, string reason);
+
+    [LoggerMessage(EventId = 9021, Level = LogLevel.Information, Message = "Not found: {Reason}")]
+    public static partial void NotFound(ILogger logger, string reason);
 }

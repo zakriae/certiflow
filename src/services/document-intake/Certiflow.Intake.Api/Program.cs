@@ -1,3 +1,4 @@
+using Certiflow.Cqrs;
 using Certiflow.Http;
 using System.Reflection;
 using Certiflow.Intake.Application.Upload;
@@ -14,13 +15,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediatR(configuration =>
-    configuration.RegisterServicesFromAssembly(typeof(UploadDocumentCommand).Assembly));
+builder.Services.AddCertiflowMediator(typeof(UploadDocumentCommand).Assembly);
 
-builder.Services.AddValidatorsFromAssembly(typeof(UploadDocumentCommand).Assembly);
 builder.Services.AddIntakeInfrastructure(builder.Configuration);
 builder.Services.AddIntakeMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 // Guardrail G4's 20 MB ceiling, enforced at the transport as well as in the aggregate. Without
 // this the server buffers the whole body before the domain ever gets to reject it, which turns a
@@ -30,7 +30,11 @@ builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLi
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Creates this context's own schema, not the whole database. EnsureCreated cannot be used: eight
 // contexts share one database (SRS §13.1) and it is all-or-nothing per database, so whichever
@@ -42,7 +46,7 @@ if (app.Environment.IsDevelopment())
     await context.EnsureSchemaAsync(IntakeDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "intake" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "intake" })).AllowAnonymous();
 
 app.MapPost("/api/documents", async (
     [FromForm] IFormFile file,

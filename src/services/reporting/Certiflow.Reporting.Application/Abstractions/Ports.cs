@@ -1,4 +1,5 @@
 using Certiflow.Reporting.Domain;
+using Certiflow.SharedKernel;
 
 namespace Certiflow.Reporting.Application.Abstractions;
 
@@ -49,4 +50,4 @@ public interface IReportBlobStore
 public sealed class SnapshotUnavailableException(string message) : Exception(message);
 
 public sealed class ReportNotFoundException(ReportId id)
-    : Exception($"Report {id} was not found.");
+    : Exception($"Report {id} was not found."), IResourceNotFound;

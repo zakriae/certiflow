@@ -10,11 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuditInfrastructure(builder.Configuration);
 builder.Services.AddAuditMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -23,7 +28,7 @@ if (app.Environment.IsDevelopment())
     await database.EnsureSchemaAsync(AuditDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "audit" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "audit" })).AllowAnonymous();
 
 // ── The ledger (FR-8.4, FR-8.5) ─────────────────────────────────────────────────────────────────
 app.MapGet("/api/audit", async (

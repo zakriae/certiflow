@@ -58,6 +58,12 @@ public interface IComplianceProfileStore
 /// would lose the submission permanently and leave an obligation stuck as Missing.
 /// </para>
 /// </summary>
+/// <summary>
+/// Deliberately <b>not</b> marked <c>IResourceNotFound</c>. Consumers throw this to put a message
+/// back on the queue when <c>SupplierRegistered</c> has not been processed yet, so it is usually a
+/// timing signal rather than an answer to a question a user asked. Mapping it to 404 would be right
+/// for the read endpoint and quietly wrong everywhere else; the read endpoint returns its own 404.
+/// </summary>
 public sealed class SupplierComplianceStateNotFoundException(SupplierId supplierId)
     : Exception($"No compliance state for supplier {supplierId}. It may not have been registered yet.")
 {

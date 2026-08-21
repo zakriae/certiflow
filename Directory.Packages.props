@@ -31,6 +31,13 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.11" />
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <!--
+      Pinned to 9.0.x, not the 10.x the feed offers. The ASP.NET Core authentication packages track
+      the runtime major, and 10.x targets net10.0 - which this solution is not (global.json pins the
+      .NET 9 SDK).
+    -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
   </ItemGroup>
 
   <ItemGroup Label="AI">

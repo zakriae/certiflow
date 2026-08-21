@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
     <ProjectReference Include="../Certiflow.SupplierRegistry.Domain/Certiflow.SupplierRegistry.Domain.csproj" />
   </ItemGroup>
 </Project>

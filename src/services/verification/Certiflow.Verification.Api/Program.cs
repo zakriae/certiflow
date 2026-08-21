@@ -1,3 +1,4 @@
+using Certiflow.Cqrs;
 using Certiflow.Http;
 using Certiflow.Persistence;
 using Certiflow.SharedKernel;
@@ -11,18 +12,21 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediatR(configuration =>
-    configuration.RegisterServicesFromAssembly(typeof(ApproveDocumentCommand).Assembly));
+builder.Services.AddCertiflowMediator(typeof(ApproveDocumentCommand).Assembly);
 
-builder.Services.AddValidatorsFromAssembly(typeof(ApproveDocumentCommand).Assembly);
 builder.Services.AddVerificationInfrastructure(builder.Configuration);
 builder.Services.AddVerificationMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -31,7 +35,7 @@ if (app.Environment.IsDevelopment())
     await database.EnsureSchemaAsync(VerificationDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "verification" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "verification" })).AllowAnonymous();
 
 // ── The review queue (FR-4.8) ───────────────────────────────────────────────────────────────────
 // Ordered by derived priority rather than by arrival. A certificate expiring in nine days matters

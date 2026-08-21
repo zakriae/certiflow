@@ -1,3 +1,4 @@
+using Certiflow.Cqrs;
 using Certiflow.Http;
 using Certiflow.Persistence;
 using Certiflow.Reporting.Application.Abstractions;
@@ -12,19 +13,22 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMediatR(configuration =>
-    configuration.RegisterServicesFromAssembly(typeof(RequestReportCommand).Assembly));
+builder.Services.AddCertiflowMediator(typeof(RequestReportCommand).Assembly);
 
-builder.Services.AddValidatorsFromAssembly(typeof(RequestReportCommand).Assembly);
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddReportingInfrastructure(builder.Configuration);
 builder.Services.AddReportingMessaging(builder.Configuration);
 builder.Services.AddCertiflowProblemDetails();
+builder.Services.AddCertiflowAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseCertiflowDomainErrors();
 app.UseStatusCodePages();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -33,7 +37,7 @@ if (app.Environment.IsDevelopment())
     await database.EnsureSchemaAsync(ReportingDbContext.Schema);
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "reporting" }));
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "reporting" })).AllowAnonymous();
 
 // ── Request a report (FR-6.4) ───────────────────────────────────────────────────────────────────
 // 202, not 200. Generation calls two other services and renders a PDF; holding the connection open

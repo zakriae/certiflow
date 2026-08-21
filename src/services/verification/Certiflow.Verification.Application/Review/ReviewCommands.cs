@@ -239,7 +239,7 @@ public sealed class CancelReviewTaskHandler(
 }
 
 public sealed class ReviewTaskNotFoundException(Guid reviewTaskId)
-    : Exception($"Review task {reviewTaskId} was not found.")
+    : Exception($"Review task {reviewTaskId} was not found."), IResourceNotFound
 {
     public Guid ReviewTaskId { get; } = reviewTaskId;
 }

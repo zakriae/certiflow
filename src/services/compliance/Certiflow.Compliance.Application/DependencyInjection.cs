@@ -1,5 +1,5 @@
+using Certiflow.Cqrs;
 using System.Reflection;
-using Certiflow.Compliance.Application.Behaviors;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,17 +17,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddComplianceApplication(this IServiceCollection services)
     {
-        var assembly = Assembly.GetExecutingAssembly();
+        // Mediator, validators and the pipeline that runs them, in one call. This service used to
+        // wire all three by hand and was the only one that got it right; the shared registration
+        // exists so that is no longer something to get right.
+        services.AddCertiflowMediator(Assembly.GetExecutingAssembly());
 
-        services.AddMediatR(configuration =>
-        {
-            configuration.RegisterServicesFromAssembly(assembly);
-
-            // Registered before the handlers run, so nothing reaches a handler unvalidated.
-            configuration.AddOpenBehavior(typeof(ValidationBehavior<,>));
-        });
-
-        services.AddValidatorsFromAssembly(assembly, includeInternalTypes: false);
         services.AddScoped<Abstractions.ComplianceStateLoader>();
 
         return services;
