@@ -70,6 +70,22 @@ app.MapGet("/api/suppliers/{id:guid}", async (Guid id, RegistryDbContext db, Can
     });
 });
 
+// Added for BC6: a compliance certificate names the category the supplier was assessed against,
+// and "dddd1111-eeee-2222-ffff-333344445555" is not a name an auditor can read. The profile has
+// carried the name since it was written; nothing exposed it until a report needed it.
+app.MapGet("/api/categories/{categoryId:guid}", async (Guid categoryId, RegistryDbContext db, CancellationToken ct) =>
+{
+    var profile = await db.Profiles.AsNoTracking()
+        .FirstOrDefaultAsync(p => p.Id == new CategoryId(categoryId), ct);
+
+    return profile is null ? Results.NotFound() : Results.Ok(new
+    {
+        categoryId = profile.Id.Value,
+        profile.Name,
+        profile.PublishedVersion,
+    });
+});
+
 app.MapGet("/api/suppliers", async (RegistryDbContext db, CancellationToken ct) =>
     Results.Ok(await db.Suppliers.AsNoTracking()
         .Select(s => new { supplierId = s.Id.Value, s.LegalName, categoryId = s.CategoryId, status = s.Status.ToString() })
