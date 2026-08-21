@@ -28,11 +28,16 @@ app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Development applies migrations on startup so a fresh clone needs no extra step. Azure does NOT:
+// several Container Apps replicas racing to apply the same migration is how a deployment corrupts a
+// schema, so deployment runs them once as a step before the new revision starts (NFR-19).
 if (app.Environment.IsDevelopment())
 {
     await using var scope = app.Services.CreateAsyncScope();
     var database = scope.ServiceProvider.GetRequiredService<VerificationDbContext>();
-    await database.EnsureSchemaAsync(VerificationDbContext.Schema);
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    await database.MigrateSchemaAsync(logger);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "verification" })).AllowAnonymous();

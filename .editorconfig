@@ -42,3 +42,17 @@ dotnet_naming_style.underscore_prefix.capitalization = camel_case
 # Analyzer noise that fights DDD style
 dotnet_diagnostic.CA1062.severity = none
 dotnet_diagnostic.CA2007.severity = none
+
+# ── EF migrations ───────────────────────────────────────────────────────────────────────────────
+# Scaffolded by `dotnet ef migrations add`, not written by hand. Holding generated code to the
+# project's style rules means either editing every regenerated file back into compliance or
+# suppressing the rule everywhere — and the second is how a real style rule quietly dies.
+#
+# `generated_code = true` is the honest label: these files are generated, they are regenerated on
+# every model change, and nobody should be reviewing their brace placement.
+[**/Persistence/Migrations/*.cs]
+generated_code = true
+dotnet_diagnostic.IDE0161.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.IDE0005.severity = none

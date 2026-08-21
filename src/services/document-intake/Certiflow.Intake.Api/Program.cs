@@ -39,11 +39,16 @@ app.UseAuthorization();
 // Creates this context's own schema, not the whole database. EnsureCreated cannot be used: eight
 // contexts share one database (SRS §13.1) and it is all-or-nothing per database, so whichever
 // service starts second silently creates nothing. Real environments migrate as a deploy step.
+// Development applies migrations on startup so a fresh clone needs no extra step. Azure does NOT:
+// several Container Apps replicas racing to apply the same migration is how a deployment corrupts a
+// schema, so deployment runs them once as a step before the new revision starts (NFR-19).
 if (app.Environment.IsDevelopment())
 {
     await using var scope = app.Services.CreateAsyncScope();
-    var context = scope.ServiceProvider.GetRequiredService<IntakeDbContext>();
-    await context.EnsureSchemaAsync(IntakeDbContext.Schema);
+    var database = scope.ServiceProvider.GetRequiredService<IntakeDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    await database.MigrateSchemaAsync(logger);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "intake" })).AllowAnonymous();

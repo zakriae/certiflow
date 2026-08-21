@@ -117,25 +117,29 @@ databases alone leaves the previous run's messages queued, and they redeliver ag
 database and interleave with the new run's events. The symptom is obligations referencing
 requirement ids that exist nowhere, and it has nothing to do with the code.
 
-### When a context gains a table
+### Schema changes
 
-The dev bootstrap creates a schema that is *missing*; it cannot evolve one that already exists.
-Add a table to a context whose schema is already there and nothing happens — until a query hits
-`Invalid object name` one table later. Until EF migrations exist, recreate the schema:
+The schema is built by **EF migrations**, in development and in Azure, from the same files. A
+service applies any pending migrations for its own context on startup in development, so a fresh
+clone needs no extra step — the logs name each migration as it runs.
+
+Add or change a table, then:
 
 ```bash
-CERTIFLOW_RECREATE_SCHEMA=true DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intelligence/Certiflow.Intelligence.Worker
+dotnet ef migrations add DescribeTheChange --project src/services/<service>/<Service>.Infrastructure --startup-project src/services/<service>/<Service>.Api --context <Service>DbContext --output-dir Persistence/Migrations
 ```
 
-Safe because every byte of data here is generated (NFR-11). Real environments run EF migrations as
-a deploy step (NFR-19).
+Each context keeps its own `__migrations` history table **inside its own schema**, which is what
+lets eight contexts share one database (SRS §13.1) — they never read each other's history.
 
-Each service creates **its own schema** on startup in development, not the whole database.
-`EnsureCreated` cannot be used here: eight contexts share one database (SRS §13.1) and
-`EnsureCreated` is all-or-nothing *per database*, so the first service to start creates everything
-it knows about and every context after it finds the database already present and creates nothing.
-That failure is silent until a consumer hits `Invalid object name` at runtime. Real environments run
-EF migrations as a deploy step (NFR-19).
+This replaced a development-only bootstrap that created a schema which was missing and could not
+evolve one that already existed. Adding a table to a live context did nothing at all, and the
+failure surfaced only as `Invalid object name` the next time a consumer touched it. That cost real
+time twice and needed an escape hatch that worked by dropping every table in the schema.
+
+**Azure does not migrate on startup.** Container Apps runs several replicas, and several replicas
+racing to apply the same migration is how a deployment corrupts a schema. Deployment runs them once,
+as a step, before the new revision starts (NFR-19).
 
 ## Uploading a document
 
