@@ -21,10 +21,10 @@ SELECT @sql += N'ALTER TABLE [' + s.name + '].[' + t.name + '] DROP CONSTRAINT [
 FROM sys.foreign_keys f
 JOIN sys.tables t ON f.parent_object_id = t.object_id
 JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name IN ('registry','intake','intelligence','verification','compliance');
+WHERE s.name IN ('registry','intake','intelligence','verification','compliance','audit','notification','reporting');
 SELECT @sql += N'DROP TABLE [' + s.name + '].[' + t.name + '];'
 FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name IN ('registry','intake','intelligence','verification','compliance');
+WHERE s.name IN ('registry','intake','intelligence','verification','compliance','audit','notification','reporting');
 EXEC sp_executesql @sql;\"" >/dev/null 2>&1 || true
 echo "  schemas dropped"
 echo
