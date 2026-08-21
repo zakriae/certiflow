@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  # A superseded run tells you about code nobody is going to merge.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Build and test (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # No version here: global.json pins the SDK, and naming it twice is how the two disagree.
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        # Warnings are errors in this repo (Directory.Build.props). A build that passes locally and
+        # warns here means someone's editor is configured differently, which is worth failing over.
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=results.trx" --results-directory artifacts/tests
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: artifacts/tests
+
+  architecture:
+    name: Architecture rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Run separately and named separately, because "the dependency rule broke" and "a test broke"
+      # are different conversations. A domain layer that grew a reference to Infrastructure should
+      # be a red check with an obvious name, not one failure among three hundred.
+      - name: Dependency rule
+        run: dotnet test tests/Certiflow.ArchitectureTests --configuration Release
+
+  frontend:
+    name: Build (Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/web/certiflow-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: src/web/certiflow-web/package-lock.json
+
+      - run: npm ci
+      - run: npx ng build --configuration production
+
+  migrations:
+    name: Migrations are complete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - run: dotnet tool install --global dotnet-ef --version 9.0.19
+
+      # Catches the commonest EF mistake: changing the model and forgetting the migration. Without
+      # this the mistake surfaces at deploy time as a runtime error against a schema that no longer
+      # matches the code - and by then it is in main.
+      - name: Check for model changes with no migration
+        run: |
+          set -euo pipefail
+          declare -a CONTEXTS=(
+            "supplier-registry|Certiflow.SupplierRegistry|RegistryDbContext|Api"
+            "document-intake|Certiflow.Intake|IntakeDbContext|Api"
+            "document-intelligence|Certiflow.Intelligence|IntelligenceDbContext|Worker"
+            "verification|Certiflow.Verification|VerificationDbContext|Api"
+            "compliance|Certiflow.Compliance|ComplianceDbContext|Api"
+            "audit-trail|Certiflow.Audit|AuditDbContext|Api"
+            "reporting|Certiflow.Reporting|ReportingDbContext|Api"
+          )
+
+          failed=0
+          for entry in "${CONTEXTS[@]}"; do
+            IFS='|' read -r folder prefix context startup <<< "$entry"
+            echo "::group::$context"
+            if dotnet ef migrations has-pending-model-changes \
+                 --project "src/services/$folder/$prefix.Infrastructure" \
+                 --startup-project "src/services/$folder/$prefix.$startup" \
+                 --context "$context"; then
+              echo "$context: model matches the last migration"
+            else
+              echo "::error::$context has model changes with no migration. Run dotnet ef migrations add."
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+
+          exit $failed

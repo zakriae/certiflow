@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+.git/
+.github/
+docs/
+infra/
+scripts/
+src/web/
+**/*.md
+**/.DS_Store
