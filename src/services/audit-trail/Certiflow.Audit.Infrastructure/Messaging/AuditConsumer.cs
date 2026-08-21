@@ -92,6 +92,12 @@ public sealed class AuditConsumer<TEvent>(AuditDbContext database) : IConsumer<T
         SupplierRegistered or SupplierActivated or SupplierSuspended or SupplierCategoryChanged => "Supplier",
         ComplianceStatusChanged or CertificateExpiringSoon or CertificateExpired => "Supplier",
         ComplianceProfileVersionPublished => "ComplianceProfile",
+
+        // The entry is about the artefact, not its subject: entity id below is the report id, so a
+        // reader filtering on a supplier finds the compliance events and follows the correlation id
+        // to the report that was issued from them.
+        ReportGenerated => "Report",
+
         _ => "Unknown",
     };
 
