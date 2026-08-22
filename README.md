@@ -30,9 +30,14 @@ row in raw SQL so the detection can be demonstrated rather than described.
 
 ## Running it
 
+Two terminals, both starting from the repository root:
+
 ```bash
-bash scripts/run-all.sh                          # gateway, six APIs, the worker
-cd src/web/certiflow-web && nvm use && npm start # the front end
+bash scripts/run-all.sh
+```
+
+```bash
+cd src/web/certiflow-web && nvm use && npm start
 ```
 
 Then http://localhost:4200 — the sign-in screen prints the demo accounts.

@@ -22,26 +22,24 @@ keyless — there is no API key anywhere, so it uses your own `az login` session
 az login
 ```
 
-**3. Node 22 is active** for the front end. The system Node is untouched:
-
-```bash
-cd src/web/certiflow-web && nvm use
-```
+**3. Node 22 is available.** The front-end command below activates it with `nvm use`; the system
+Node is never changed.
 
 **4. Sample certificates exist.** They are generated, not real documents:
 
 ```bash
-dotnet run --project src/tools/Certiflow.SeedCorpus -- --output /tmp/corpus
+cd ~/Documents/GitHub/certiflow && dotnet run --project src/tools/Certiflow.SeedCorpus -- --output /tmp/corpus
 ```
 
 ## Starting it
 
-Two commands, in two terminals.
+Two commands, in two terminals. **Both start by changing into the repository** — every path below is
+relative to it, and `scripts/run-all.sh` does not exist anywhere else.
 
 **Terminal 1 — the back end** (gateway, six APIs, the worker):
 
 ```bash
-bash scripts/run-all.sh
+cd ~/Documents/GitHub/certiflow && bash scripts/run-all.sh
 ```
 
 It builds once, starts everything, and waits until all eight answer `/health`. It prints
@@ -51,7 +49,7 @@ the same shared projects into the same folder and fail on each other's file lock
 **Terminal 2 — the web app:**
 
 ```bash
-cd src/web/certiflow-web && npm start
+cd ~/Documents/GitHub/certiflow/src/web/certiflow-web && nvm use && npm start
 ```
 
 Then open **http://localhost:4200**.
@@ -61,7 +59,7 @@ Then open **http://localhost:4200**.
 To wipe all data and begin clean:
 
 ```bash
-bash scripts/reset-local.sh
+cd ~/Documents/GitHub/certiflow && bash scripts/reset-local.sh
 ```
 
 It drops every schema **and** purges the message broker. Purging matters: dropping the databases
@@ -197,6 +195,9 @@ invalidates every token. Sign in again.
 
 **A service will not start.** Look at `/tmp/certiflow-<name>.log`. The commonest cause is a container
 that is not running.
+
+**`scripts/run-all.sh: No such file or directory`.** You are not in the repository. Every command
+here assumes `~/Documents/GitHub/certiflow`, not the folder above it.
 
 **The document preview is blank.** Azurite needs a CORS rule for the browser to fetch PDFs directly:
 
