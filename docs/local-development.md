@@ -188,8 +188,14 @@ docker rm -f certiflow-sql certiflow-azurite
 Node 22 is required (`.nvmrc`); the system Node is not touched.
 
 ```bash
-cd src/web/certiflow-web && nvm use && npm install && npm start
+cd src/web/certiflow-web
+source ~/.nvm/nvm.sh && nvm use && npm install && npm start
 ```
+
+`source ~/.nvm/nvm.sh` is not optional unless your shell profile already loads nvm — it is a shell
+function, not a binary, so an unconfigured shell reports `command not found: nvm`. Sourcing it
+affects that terminal only, which is the point: nvm's default alias is 22, and loading it from
+`~/.zshrc` would switch every shell to Node 22 and shadow the system Node.
 
 The proxy now has exactly two entries, both pointing at the gateway on 5000 — which is the gateway
 earning its place. It used to list every service individually, and every new service meant another

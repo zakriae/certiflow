@@ -49,8 +49,18 @@ the same shared projects into the same folder and fail on each other's file lock
 **Terminal 2 — the web app:**
 
 ```bash
-cd ~/Documents/GitHub/certiflow/src/web/certiflow-web && nvm use && npm start
+cd ~/Documents/GitHub/certiflow/src/web/certiflow-web
+source ~/.nvm/nvm.sh && nvm use && npm start
 ```
+
+`source ~/.nvm/nvm.sh` is there because **nvm is a shell function, not a program** — it exists only
+if your shell profile loads it, and many do not. Without it you get `zsh: command not found: nvm`,
+and without `nvm use` you get Angular refusing to run on whatever Node your system has.
+
+Sourcing it affects only that terminal. It is deliberately not added to `~/.zshrc` here: nvm's
+default alias is 22, so loading it at profile level would switch **every** shell to Node 22 and
+shadow the system Node that other projects may rely on. That is a decision for whoever owns the
+machine.
 
 Then open **http://localhost:4200**.
 
@@ -198,6 +208,12 @@ that is not running.
 
 **`scripts/run-all.sh: No such file or directory`.** You are not in the repository. Every command
 here assumes `~/Documents/GitHub/certiflow`, not the folder above it.
+
+**`command not found: nvm`.** nvm is a shell function your profile has not loaded. Run
+`source ~/.nvm/nvm.sh` first, in that same terminal.
+
+**`The Angular CLI requires a minimum Node.js version of v22`.** nvm loaded but `nvm use` was not
+run, so the shell is still on the system Node.
 
 **The document preview is blank.** Azurite needs a CORS rule for the browser to fetch PDFs directly:
 

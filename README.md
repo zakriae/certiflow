@@ -37,7 +37,8 @@ bash scripts/run-all.sh
 ```
 
 ```bash
-cd src/web/certiflow-web && nvm use && npm start
+cd src/web/certiflow-web
+source ~/.nvm/nvm.sh && nvm use && npm start   # nvm is a shell function; your profile may not load it
 ```
 
 Then http://localhost:4200 — the sign-in screen prints the demo accounts.
