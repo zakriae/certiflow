@@ -56,6 +56,12 @@ builder.Services.AddAuthorization(options =>
     // that must never be anonymous - it is what spends tokens at Azure OpenAI.
     options.AddPolicy(Policies.Upload, policy =>
         policy.RequireRole(Roles.Admin, Roles.Reviewer, Roles.SupplierUser));
+
+    // The inbox is the one read a supplier user is meant to have. The service narrows it further to
+    // their own supplier using the supplier_id claim - a policy can say "suppliers may read
+    // notifications", it cannot say "only their own".
+    options.AddPolicy(Policies.Inbox, policy =>
+        policy.RequireRole(Roles.Admin, Roles.Reviewer, Roles.Auditor, Roles.SupplierUser));
 });
 
 builder.Services.AddReverseProxy()
@@ -188,4 +194,6 @@ internal static class Policies
     public const string ReadEverything = "read-everything";
 
     public const string Upload = "upload";
+
+    public const string Inbox = "inbox";
 }

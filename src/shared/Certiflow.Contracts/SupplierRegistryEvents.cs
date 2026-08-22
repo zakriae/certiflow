@@ -9,6 +9,14 @@ public sealed record SupplierRegistered(
     string? TradingName,
     Guid CategoryId,
     string CountryCode,
+    // The primary contact travels with the event because BC7 has to email this supplier and cannot
+    // do that from an id. It is the same reasoning that already put LegalName here: an integration
+    // event carries what its consumers need, or every consumer ends up calling back to ask.
+    //
+    // Nullable, because a supplier can be registered without one - and a consumer that needs it
+    // should skip such a supplier rather than invent an address.
+    string? PrimaryContactName,
+    string? PrimaryContactEmail,
     Guid CorrelationId,
     Guid? CausationId = null) : IntegrationEvent(CorrelationId, CausationId);
 

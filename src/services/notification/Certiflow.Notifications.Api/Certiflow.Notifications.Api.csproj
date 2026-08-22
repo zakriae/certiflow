@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Notifications.Api</RootNamespace>
+    <UserSecretsId>certiflow-notifications-api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.Http/Certiflow.Http.csproj" />
+    <ProjectReference Include="../../../shared/Certiflow.Cqrs/Certiflow.Cqrs.csproj" />
+    <ProjectReference Include="../Certiflow.Notifications.Infrastructure/Certiflow.Notifications.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

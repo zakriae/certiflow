@@ -80,6 +80,13 @@ public static class CertiflowAuthentication
             options.AddPolicy(CertiflowPolicies.Upload, policy =>
                 policy.RequireRole(CertiflowRoles.Admin, CertiflowRoles.Reviewer, CertiflowRoles.SupplierUser));
 
+            // Suppliers may read notifications; the service narrows that to their own using the
+            // supplier_id claim, because a policy cannot express "only their own".
+            options.AddPolicy(CertiflowPolicies.Inbox, policy =>
+                policy.RequireRole(
+                    CertiflowRoles.Admin, CertiflowRoles.Reviewer, CertiflowRoles.Auditor,
+                    CertiflowRoles.SupplierUser, CertiflowRoles.Service));
+
             // Deny by default. Every endpoint requires an authenticated caller unless it says
             // AllowAnonymous, so forgetting to protect a new endpoint fails closed rather than
             // publishing it.
@@ -121,6 +128,8 @@ public static class CertiflowPolicies
     public const string ReadEverything = "read-everything";
 
     public const string Upload = "upload";
+
+    public const string Inbox = "inbox";
 }
 
 public static class Claims

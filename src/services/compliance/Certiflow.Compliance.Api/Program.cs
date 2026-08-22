@@ -204,7 +204,10 @@ app.MapGet("/api/suppliers/{id:guid}/compliance", async (
 // ── The Expiry Watch, on demand (FR-5.4) ────────────────────────────────────────────────────────
 // A timer trigger in BC7 calls this nightly. Exposed as an endpoint as well so the demo can show a
 // certificate lapsing without waiting for midnight.
+// Admin only, and enforced here as well as at the gateway: the sweep walks every supplier and
+// raises the events that become reminders, so triggering it repeatedly is a way to make noise.
 app.MapPost("/api/expiry-watch", async (ISender sender, CancellationToken cancellationToken) =>
-    Results.Ok(await sender.Send(new RunExpiryWatchCommand(), cancellationToken)));
+    Results.Ok(await sender.Send(new RunExpiryWatchCommand(), cancellationToken)))
+    .RequireAuthorization(CertiflowPolicies.Admin);
 
 app.Run();

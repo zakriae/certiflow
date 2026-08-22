@@ -19,6 +19,7 @@ run src/services/verification/Certiflow.Verification.Api           5290 verifica
 run src/services/compliance/Certiflow.Compliance.Api               5300 compliance
 run src/services/audit-trail/Certiflow.Audit.Api                   5310 audit
 run src/services/reporting/Certiflow.Reporting.Api                 5320 reporting
+run src/services/notification/Certiflow.Notifications.Api          5330 notifications
 
 DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intelligence/Certiflow.Intelligence.Worker \
   --no-build > /tmp/certiflow-worker.log 2>&1 &
@@ -26,10 +27,10 @@ DOTNET_ENVIRONMENT=Development dotnet run --project src/services/document-intell
 for _ in $(seq 1 40); do
   sleep 3
   ok=""
-  for p in 5000 5270 5280 5290 5300 5310 5320; do
+  for p in 5000 5270 5280 5290 5300 5310 5320 5330; do
     ok="$ok$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 "http://localhost:$p/health" 2>/dev/null)"
   done
-  if [ "$ok" = "200200200200200200200" ]; then echo "all seven up"; exit 0; fi
+  if [ "$ok" = "200200200200200200200200" ]; then echo "all eight up"; exit 0; fi
 done
 
 echo "not all services came up: $ok"

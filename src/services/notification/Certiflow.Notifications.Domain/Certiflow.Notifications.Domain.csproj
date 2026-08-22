@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Notifications.Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/Certiflow.SharedKernel/Certiflow.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

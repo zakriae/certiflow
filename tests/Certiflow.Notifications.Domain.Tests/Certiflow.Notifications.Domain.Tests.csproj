@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Certiflow.Notifications.Domain.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/services/notification/Certiflow.Notifications.Domain/Certiflow.Notifications.Domain.csproj" />
+  </ItemGroup>
+</Project>

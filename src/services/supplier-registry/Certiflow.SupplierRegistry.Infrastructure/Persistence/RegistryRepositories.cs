@@ -62,7 +62,7 @@ public sealed class RegistryUnitOfWork(RegistryDbContext context, IClock clock) 
         foreach (var domainEvent in suppliers.SelectMany(s => s.DomainEvents)
                      .Concat(profiles.SelectMany(p => p.DomainEvents)))
         {
-            if (Translate(domainEvent) is { } integrationEvent)
+            if (Translate(domainEvent, suppliers) is { } integrationEvent)
             {
                 context.Outbox.Add(ToOutboxMessage(integrationEvent));
             }
@@ -82,7 +82,15 @@ public sealed class RegistryUnitOfWork(RegistryDbContext context, IClock clock) 
         return written;
     }
 
-    private static Contracts.IIntegrationEvent? Translate(IDomainEvent domainEvent) => domainEvent switch
+    /// <summary>
+    /// Takes the aggregates as well as the event, so <c>SupplierRegistered</c> can carry the primary
+    /// contact. The domain event is raised inside <c>Register</c>, before any contact has been
+    /// added, so the contact is not on the event - but it is on the aggregate by the time this runs,
+    /// which is the same trick BC5 uses to put an obligation snapshot on a status change.
+    /// </summary>
+    private static Contracts.IIntegrationEvent? Translate(
+        IDomainEvent domainEvent,
+        IReadOnlyCollection<Supplier> suppliers) => domainEvent switch
     {
         DomainEvents.SupplierRegistered registered => new Contracts.SupplierRegistered(
             registered.SupplierId.Value,
@@ -90,6 +98,8 @@ public sealed class RegistryUnitOfWork(RegistryDbContext context, IClock clock) 
             registered.TradingName,
             registered.CategoryId?.Value ?? Guid.Empty,
             registered.CountryCode,
+            suppliers.SingleOrDefault(s => s.Id == registered.SupplierId)?.PrimaryContact?.Name,
+            suppliers.SingleOrDefault(s => s.Id == registered.SupplierId)?.PrimaryContact?.Email.Value,
             CorrelationId: registered.EventId),
 
         // Activation, not registration, is what tells Compliance to start tracking a supplier: a
