@@ -30,13 +30,17 @@ row in raw SQL so the detection can be demonstrated rather than described.
 
 ## Running it
 
-See [docs/local-development.md](docs/local-development.md). Short version:
-
 ```bash
-bash scripts/run-all.sh
+bash scripts/run-all.sh                          # gateway, six APIs, the worker
+cd src/web/certiflow-web && nvm use && npm start # the front end
 ```
 
 Then http://localhost:4200 — the sign-in screen prints the demo accounts.
+
+[**docs/manual-testing.md**](docs/manual-testing.md) is a ten-minute walkthrough that assumes no
+knowledge of the code: what each role sees, why a field scores 0.80, and how to break the audit
+chain and watch it get caught. [docs/local-development.md](docs/local-development.md) covers setup
+and the backing containers.
 
 ## Architecture
 
