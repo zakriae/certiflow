@@ -1,0 +1,35 @@
+<section class="inbox">
+  <header>
+    <h1>Notifications</h1>
+    <p class="lede">
+      Outbound email is disabled, so messages are held here instead of being sent. Everything below
+      shows exactly what would have reached the supplier.
+    </p>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <ul>
+    @for (notification of notifications(); track notification.notificationId) {
+      <li [class.unread]="notification.readAt === null">
+        <button type="button" (click)="toggle(notification)">
+          <span class="kind">{{ notification.kind }}</span>
+          <span class="subject">{{ notification.subject }}</span>
+          <span class="to">to {{ notification.recipient }}</span>
+          <span class="status" [class.held]="notification.status === 'Suppressed'">
+            {{ notification.status === 'Suppressed' ? 'held — not sent' : notification.status }}
+          </span>
+          <span class="when">{{ notification.raisedAt | date: 'dd MMM HH:mm' }}</span>
+        </button>
+
+        @if (expanded() === notification.notificationId) {
+          <pre class="body">{{ notification.body }}</pre>
+        }
+      </li>
+    } @empty {
+      <li class="empty">Nothing yet. Approve or reject a document, or let a certificate approach expiry.</li>
+    }
+  </ul>
+</section>

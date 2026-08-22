@@ -62,6 +62,11 @@ export class Auth {
 
   readonly canAdminister = computed(() => this.role() === 'Admin');
 
+  /** Mirrors the server's Upload policy. The server refuses regardless; this only hides the door. */
+  readonly canUpload = computed(() => ['SupplierUser', 'Reviewer', 'Admin'].includes(this.role() ?? ''));
+
+  readonly canAudit = computed(() => ['Auditor', 'Reviewer', 'Admin'].includes(this.role() ?? ''));
+
   demoAccounts(): Observable<DemoAccounts> {
     return this.http.get<DemoAccounts>('/auth/demo-accounts');
   }

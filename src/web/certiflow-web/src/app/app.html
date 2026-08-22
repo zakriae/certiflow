@@ -4,9 +4,16 @@
 
     <nav>
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      @if (auth.canUpload()) {
+        <a routerLink="/upload" routerLinkActive="active">Upload</a>
+      }
       @if (auth.canReview()) {
         <a routerLink="/review" routerLinkActive="active">Review queue</a>
       }
+      @if (auth.canAudit()) {
+        <a routerLink="/audit" routerLinkActive="active">Audit trail</a>
+      }
+      <a routerLink="/inbox" routerLinkActive="active">Notifications</a>
     </nav>
 
     <div class="who">

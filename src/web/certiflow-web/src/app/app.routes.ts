@@ -15,6 +15,14 @@ export const routes: Routes = [
     loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
   },
   {
+    // Suppliers upload; reviewers and admins can too, which is what lets one person demonstrate
+    // segregation of duties failing.
+    path: 'upload',
+    title: 'Upload - Certiflow',
+    canActivate: [roleGuard('SupplierUser', 'Reviewer', 'Admin')],
+    loadComponent: () => import('./upload/upload-screen').then((m) => m.UploadScreen),
+  },
+  {
     // Lazy-loaded on purpose. The PDF viewer is roughly three quarters of a megabyte, and a
     // dashboard user who never opens a review should not pay for it on first paint.
     path: 'review',
@@ -23,6 +31,18 @@ export const routes: Routes = [
     // stops an auditor being shown an approve button that was always going to 403.
     canActivate: [roleGuard('Reviewer', 'Admin')],
     loadComponent: () => import('./review/review-screen').then((m) => m.ReviewScreen),
+  },
+  {
+    path: 'audit',
+    title: 'Audit trail - Certiflow',
+    canActivate: [roleGuard('Auditor', 'Reviewer', 'Admin')],
+    loadComponent: () => import('./audit/audit-trail').then((m) => m.AuditTrail),
+  },
+  {
+    path: 'inbox',
+    title: 'Notifications - Certiflow',
+    canActivate: [authGuard],
+    loadComponent: () => import('./inbox/inbox').then((m) => m.Inbox),
   },
   { path: '**', redirectTo: 'dashboard' },
 ];

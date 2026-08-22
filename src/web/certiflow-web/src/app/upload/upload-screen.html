@@ -1,0 +1,74 @@
+<section class="upload">
+  <header>
+    <h1>Upload a certificate</h1>
+    <p class="lede">
+      Drop a PDF and it goes straight to extraction. Fields are read from the document and shown to
+      a reviewer with the sentence they came from — nothing is accepted without a person seeing it.
+    </p>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="fields">
+    <label>
+      <span>Supplier</span>
+      <select [value]="supplierId()" (change)="chooseSupplier($any($event.target).value)">
+        @for (supplier of suppliers(); track supplier.supplierId) {
+          <option [value]="supplier.supplierId">{{ nameOf(supplier.supplierId) }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Requirement</span>
+      <select [value]="requirementId()" (change)="requirementId.set($any($event.target).value)">
+        @for (requirement of requirements(); track requirement.requirementId) {
+          <option [value]="requirement.requirementId">
+            {{ requirement.documentType }} — {{ requirement.status }}
+          </option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="dropzone"
+       [class.dragging]="dragging()"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave()"
+       (drop)="onDrop($event)">
+    @if (file(); as chosen) {
+      <p class="chosen">{{ chosen.name }}</p>
+      <p class="size">{{ (chosen.size / 1024 / 1024).toFixed(2) }} MB</p>
+    } @else {
+      <p class="prompt">Drop a PDF certificate here</p>
+      <label class="picker">
+        <input type="file" accept="application/pdf" (change)="onPick($event)" hidden />
+        <span>or choose a file</span>
+      </label>
+    }
+  </div>
+
+  @if (busy()) {
+    <div class="progress"><div class="bar" [style.width.%]="percent()"></div></div>
+    <p class="uploading">Uploading… {{ percent() }}%</p>
+  }
+
+  <button type="button" (click)="submit()" [disabled]="!canSubmit()">Upload</button>
+
+  @if (result(); as done) {
+    <div class="result" [class.duplicate]="done.duplicateOfDocumentId !== null">
+      @if (done.duplicateOfDocumentId) {
+        <strong>Already submitted</strong>
+        <span>
+          This exact file was uploaded before, so it was not stored again and no second extraction
+          was run. The original document still stands.
+        </span>
+      } @else {
+        <strong>Accepted — extraction has started</strong>
+        <span>It will appear in the review queue in a few seconds.</span>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,95 @@
+.audit { padding: 1.5rem 2rem 3rem; color: #1a202c; }
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+
+  h1 { margin: 0; font-size: 1.35rem; }
+}
+
+.lede { margin: 0.35rem 0 0; max-width: 46rem; color: #64748b; font-size: 0.85rem; }
+
+button {
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: #1d4ed8;
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled { background: #94a3b8; cursor: progress; }
+}
+
+.error, .verdict {
+  margin: 1.25rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+.verdict {
+  &.valid  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  &.broken { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+  .kind { font-size: 0.78rem; opacity: 0.85; }
+}
+
+table {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  font-size: 0.82rem;
+
+  th {
+    text-align: left;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  td { padding: 0.5rem 0.8rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+
+  // The broken row is stated, not merely tinted: this is the one thing the screen exists to show.
+  tr.broken td {
+    background: #fef2f2;
+    box-shadow: inset 3px 0 0 #b91c1c;
+    font-weight: 600;
+  }
+
+  .num { color: #64748b; }
+  .when { white-space: nowrap; color: #475569; }
+  .action { font-weight: 600; }
+  .entity { display: block; }
+  .id { font-size: 0.7rem; color: #94a3b8; }
+  .person { color: #1d4ed8; font-weight: 600; }
+
+  code { font-size: 0.7rem; color: #64748b; word-break: break-all; }
+  .empty { color: #64748b; text-align: center; padding: 1.5rem; }
+}
+
+.verdict .jump {
+  justify-self: start;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  background: #b91c1c;
+  font-size: 0.78rem;
+}

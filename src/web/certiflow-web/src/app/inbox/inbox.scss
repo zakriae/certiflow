@@ -1,0 +1,81 @@
+.inbox { padding: 1.5rem 2rem 3rem; max-width: 58rem; color: #1a202c; }
+
+h1 { margin: 0; font-size: 1.35rem; }
+
+.lede { margin: 0.35rem 0 1.5rem; color: #64748b; font-size: 0.85rem; max-width: 44rem; }
+
+.error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.4rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+li {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  overflow: hidden;
+
+  &.unread { border-left: 3px solid #1d4ed8; }
+  &.empty { padding: 1.25rem; color: #64748b; font-size: 0.88rem; }
+}
+
+li > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 11rem 1fr auto;
+  grid-template-areas:
+    'kind subject when'
+    'kind to      status';
+  gap: 0.15rem 1rem;
+  align-items: baseline;
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover { background: #f8fafc; }
+}
+
+.kind {
+  grid-area: kind;
+  align-self: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+}
+
+.subject { grid-area: subject; font-weight: 600; font-size: 0.88rem; }
+.to { grid-area: to; font-size: 0.75rem; color: #64748b; }
+.when { grid-area: when; font-size: 0.75rem; color: #94a3b8; }
+
+.status {
+  grid-area: status;
+  font-size: 0.72rem;
+  color: #15803d;
+
+  // Held is amber, not green: it is worth a reader noticing that nothing was actually sent.
+  &.held { color: #b45309; }
+}
+
+.body {
+  margin: 0;
+  padding: 0.9rem 1rem 1.1rem;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: #334155;
+}

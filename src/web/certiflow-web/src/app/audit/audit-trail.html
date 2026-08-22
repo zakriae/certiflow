@@ -1,0 +1,56 @@
+<section class="audit">
+  <header class="head">
+    <div>
+      <h1>Audit trail</h1>
+      <p class="lede">
+        Every event, hash-chained. Each entry's hash covers the one before it, so altering any row
+        invalidates everything after it.
+      </p>
+    </div>
+
+    <button type="button" (click)="verify()" [disabled]="verifying()">
+      {{ verifying() ? 'Verifying…' : 'Verify chain' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (verification(); as result) {
+    <div class="verdict" [class.valid]="result.isValid" [class.broken]="!result.isValid">
+      @if (result.isValid) {
+        <strong>Chain intact</strong>
+        <span>{{ result.entriesVerified }} entries verified. Nothing has been altered.</span>
+      } @else {
+        <strong>Chain broken at entry {{ result.firstBrokenEntryId }}</strong>
+        <span>{{ result.detail }}</span>
+        <span class="kind">{{ result.breakKind }} — verified {{ result.entriesVerified }} entries before the break.</span>
+        <button type="button" class="jump" (click)="showBrokenEntry()">Show entry {{ result.firstBrokenEntryId }}</button>
+      }
+    </div>
+  }
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>When</th><th>Action</th><th>Entity</th><th>Actor</th><th>Hash</th></tr>
+    </thead>
+    <tbody>
+      @for (entry of entries(); track entry.entryId) {
+        <tr [id]="'entry-' + entry.entryId" [class.broken]="isBroken(entry)">
+          <td class="num">{{ entry.entryId }}</td>
+          <td class="when">{{ entry.occurredAt | date: 'dd MMM HH:mm:ss' }}</td>
+          <td class="action">{{ entry.action }}</td>
+          <td>
+            <span class="entity">{{ entry.entityType }}</span>
+            <span class="id">{{ entry.entityId.slice(0, 8) }}</span>
+          </td>
+          <td [class.person]="entry.actor !== 'system'">{{ entry.actor }}</td>
+          <td><code>{{ entry.entryHash }}</code></td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6" class="empty">Nothing recorded yet.</td></tr>
+      }
+    </tbody>
+  </table>
+</section>
