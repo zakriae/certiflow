@@ -34,6 +34,12 @@ dist/
 npm-debug.log*
 yarn-error.log*
 
+# Any log, anywhere. The specific rules above were not enough: six files named after port numbers
+# (5270.log and friends) were committed by a `git add -A`, written by a shell loop whose arguments
+# failed to expand. Service logs belong in /tmp, and a log that reaches the repository root is
+# always an accident.
+*.log
+
 # macOS
 .DS_Store
 
