@@ -178,3 +178,41 @@ public sealed class CertificateExpiredConsumer(NotificationsDbContext database, 
                  """),
             cancellationToken);
 }
+
+/// <summary>
+/// FR-6.4's "notification when ready".
+/// <para>
+/// Generation is asynchronous, so the caller who asked for a report has already had their 202 and
+/// gone. Without this the only way to learn it finished is to keep polling — which the dashboard
+/// does, but only while the tab stays open on that screen.
+/// </para>
+/// </summary>
+public sealed class ReportGeneratedNotificationConsumer(NotificationsDbContext database, ISender sender)
+    : NotificationConsumerBase<Contracts.ReportGenerated>(database, sender)
+{
+    protected override Task HandleAsync(Contracts.ReportGenerated message, CancellationToken cancellationToken)
+    {
+        // Portfolio reports carry no supplier, and a notification about nobody has no recipient.
+        if (message.SupplierId is not { } supplierId)
+        {
+            return Task.CompletedTask;
+        }
+
+        return Sender.Send(
+            new RaiseNotificationCommand(
+                // The report id, not the supplier: every report is its own artefact (FR-6.5), so two
+                // reports for one supplier are two notifications rather than one deduplicated away.
+                $"report:{message.ReportId}",
+                supplierId,
+                NotificationKind.ReportReady,
+                "Your compliance report is ready",
+                $"""
+                 The compliance report requested by {message.RequestedBy} has finished generating.
+
+                 Verification hash: {message.VerificationHash}
+
+                 It can be downloaded from the supplier's page.
+                 """),
+            cancellationToken);
+    }
+}

@@ -41,6 +41,14 @@ export const routes: Routes = [
     loadComponent: () => import('./supplier/supplier-detail').then((m) => m.SupplierDetail),
   },
   {
+    // Admin only, and the server agrees: publishing a profile is behind the admin policy at the
+    // gateway and in the registry (FR-1.1, FR-1.2, FR-1.3).
+    path: 'admin',
+    title: 'Administration - Certiflow',
+    canActivate: [roleGuard('Admin')],
+    loadComponent: () => import('./admin/admin-screen').then((m) => m.AdminScreen),
+  },
+  {
     path: 'audit',
     title: 'Audit trail - Certiflow',
     canActivate: [roleGuard('Auditor', 'Reviewer', 'Admin')],

@@ -51,6 +51,7 @@ public static class DependencyInjection
             bus.AddConsumer<DocumentRejectedNotificationConsumer>();
             bus.AddConsumer<CertificateExpiringSoonConsumer>();
             bus.AddConsumer<CertificateExpiredConsumer>();
+            bus.AddConsumer<ReportGeneratedNotificationConsumer>();
 
             // Prefixed, per ADR-0005. Four of these five events already have consumers elsewhere,
             // so without a prefix this service would compete with them for the same queues and each

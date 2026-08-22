@@ -17,6 +17,9 @@ public enum NotificationKind
 
     /// <summary>To administrators, not suppliers (FR-7.3).</summary>
     SupplierBecameNonCompliant = 6,
+
+    /// <summary>An async report finished generating (FR-6.4).</summary>
+    ReportReady = 7,
 }
 
 public enum DeliveryChannel

@@ -14,6 +14,9 @@
         <a routerLink="/audit" routerLinkActive="active">Audit trail</a>
       }
       <a routerLink="/inbox" routerLinkActive="active">Notifications</a>
+      @if (auth.canAdminister()) {
+        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+      }
     </nav>
 
     <div class="who">

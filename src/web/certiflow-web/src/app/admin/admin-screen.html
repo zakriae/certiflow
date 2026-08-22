@@ -1,0 +1,110 @@
+<section class="admin">
+  <header>
+    <h1>Administration</h1>
+    <p class="lede">Suppliers and the compliance profiles they are measured against.</p>
+  </header>
+
+  <div class="panels">
+    <section class="panel">
+      <h2>Register a supplier</h2>
+
+      <label><span>Legal name</span>
+        <input [value]="legalName()" (input)="legalName.set($any($event.target).value)" placeholder="Meridian Logistics SARL" /></label>
+
+      <label><span>Trading name (optional)</span>
+        <input [value]="tradingName()" (input)="tradingName.set($any($event.target).value)" /></label>
+
+      <div class="pair">
+        <label><span>Registration number</span>
+          <input [value]="registrationNumber()" (input)="registrationNumber.set($any($event.target).value)" placeholder="FR-882-119" /></label>
+
+        <label><span>Country</span>
+          <input maxlength="2" [value]="countryCode()" (input)="countryCode.set($any($event.target).value)" placeholder="FR" /></label>
+      </div>
+
+      <label><span>Category</span>
+        <input [value]="categoryId()" (input)="categoryId.set($any($event.target).value)" /></label>
+
+      <div class="pair">
+        <label><span>Contact name</span>
+          <input [value]="contactName()" (input)="contactName.set($any($event.target).value)" /></label>
+
+        <label><span>Contact email</span>
+          <input type="email" [value]="contactEmail()" (input)="contactEmail.set($any($event.target).value)" /></label>
+      </div>
+
+      <p class="hint">
+        The contact email is where notifications go — it travels with the registration event, so a
+        supplier registered without one is reachable by nobody.
+      </p>
+
+      @if (supplierError()) { <p class="error">{{ supplierError() }}</p> }
+      @if (supplierResult(); as id) { <p class="ok">Registered and activated. Supplier {{ id }}</p> }
+
+      <button type="button" (click)="registerSupplier()" [disabled]="supplierBusy()">
+        {{ supplierBusy() ? 'Registering…' : 'Register supplier' }}
+      </button>
+    </section>
+
+    <section class="panel">
+      <h2>Publish a compliance profile</h2>
+
+      <label><span>Profile name</span>
+        <input [value]="profileName()" (input)="profileName.set($any($event.target).value)" /></label>
+
+      <h3>Requirements</h3>
+
+      @for (requirement of requirements(); track $index) {
+        <div class="requirement">
+          <label><span>Document type</span>
+            <input [value]="requirement.documentType"
+                   (input)="updateRequirement($index, { documentType: $any($event.target).value })"
+                   placeholder="ISO 9001" /></label>
+
+          <div class="pair">
+            <label><span>Renewal lead (days)</span>
+              <input type="number" [value]="requirement.renewalLeadTimeDays"
+                     (input)="updateRequirement($index, { renewalLeadTimeDays: +$any($event.target).value })" /></label>
+
+            <label><span>Min validity (days)</span>
+              <input type="number" [value]="requirement.minValidityDays"
+                     (input)="updateRequirement($index, { minValidityDays: +$any($event.target).value })" /></label>
+          </div>
+
+          <div class="checks">
+            <label class="check">
+              <input type="checkbox" [checked]="requirement.isMandatory"
+                     (change)="updateRequirement($index, { isMandatory: $any($event.target).checked })" />
+              <span>Mandatory</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" [checked]="requirement.requiresIssuerMatch"
+                     (change)="updateRequirement($index, { requiresIssuerMatch: $any($event.target).checked })" />
+              <span>Issuer must match</span>
+            </label>
+
+            @if (requirements().length > 1) {
+              <button type="button" class="remove" (click)="removeRequirement($index)">Remove</button>
+            }
+          </div>
+        </div>
+      }
+
+      <button type="button" class="ghost" (click)="addRequirement()">Add requirement</button>
+
+      <p class="hint">
+        Publishing creates a new version. Compliance rebuilds every supplier in this category against
+        it, and requirements dropped from the profile retire rather than vanish — their evidence
+        history is kept.
+      </p>
+
+      @if (profileError()) { <p class="error">{{ profileError() }}</p> }
+      @if (profileResult(); as message) { <p class="ok">{{ message }}</p> }
+
+      <button type="button" (click)="publishProfile()" [disabled]="profileBusy()">
+        {{ profileBusy() ? 'Publishing…' : 'Publish profile' }}
+      </button>
+    </section>
+  </div>
+</section>
