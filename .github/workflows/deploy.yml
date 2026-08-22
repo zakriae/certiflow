@@ -11,7 +11,10 @@ on:
       environmentName:
         description: Short environment suffix
         required: true
-        default: dev
+        # Not 'dev': that resolves to rg-certiflow-dev, which holds the Azure OpenAI account, and the
+        # guard below correctly refuses to deploy an environment whose teardown would delete it. A
+        # default that can never succeed is a default that wastes the first run of every new user.
+        default: demo
       imageTag:
         description: Image tag to deploy (defaults to the commit sha)
         required: false

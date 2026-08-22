@@ -1,151 +1,129 @@
 # Deploying Certiflow
 
-The environment is **provisioned for a recording session and torn down afterwards** (SRS §5.0). That
-is not cost-cutting theatre — it is the constraint that shapes the whole deployment: NFR-3 requires
-the full stack back from `main` plus Bicep in under 30 minutes, unattended, and SRS §20 R9 names the
-realistic failure as *"teardown discipline fails and the environment quietly stays up, billing"*.
+The environment exists for the length of a recording session and is torn down afterwards (SRS §5.0).
+NFR-3 is the requirement that shapes everything here: the full stack must come back from `main` plus
+Bicep in **under 30 minutes, unattended**.
 
-So: deployment is manual-trigger only, teardown is a scripted step with an acceptance criterion, and
-nothing in the stack survives except the one resource that should.
+Nothing is deployed automatically. `Deploy` is `workflow_dispatch` only, because deploying on every
+push to `main` means every merge silently starts a meter — which SRS §20 R9 names as the realistic
+failure of this project.
 
-## What gets created
+## One-time setup (needs the subscription owner)
 
-| Resource | Why this one |
-|---|---|
-| Container Apps environment + 8 apps | Gateway, six APIs, one worker. Scale to zero. |
-| Azure SQL (serverless, GP_S_Gen5_1) | One database, a schema per context (SRS §13.1). Auto-pauses after 60 minutes. |
-| Storage account | `documents` and `reports` containers, shared-key access **disabled**. |
-| Service Bus (Standard) | Standard, not Basic: MassTransit's topology needs topics, and Basic has queues only. |
-| Container Registry (Basic) | Admin user disabled; apps pull with managed identity. |
-| Log Analytics + App Insights | 30-day retention — an environment that lives for hours has no use for 90. |
+These four steps cannot be scripted from inside the repo: they create the trust relationship that
+lets GitHub deploy without a secret.
 
-**Not created: the Azure OpenAI account.** It is referenced from its own resource group and
-deliberately outlives every environment, because it holds a model deployment that costs time and
-quota to rebuild and bills per token rather than per hour.
-
-## Nothing holds a secret
-
-Every service reaches SQL, Storage, Service Bus and Azure OpenAI with its **own** user-assigned
-managed identity (NFR-9). There is no connection string with a password, no storage key, and no
-Service Bus SAS rule anywhere in the templates — `disableLocalAuth`, `allowSharedKeyAccess: false`
-and `azureADOnlyAuthentication` are set so those credentials cannot be created even by accident.
-
-Eight identities rather than one shared identity. It costs nothing, and it means the audit service
-cannot write to blob storage and the worker cannot read the review queue. One shared identity would
-give every container the union of every permission, which is the same as giving them all the
-maximum.
-
-Only the **worker** holds `Cognitive Services OpenAI User`. Guardrail G1 and §13.4 both reduce to
-"the thing that spends money should be the only thing that can", and this is where that stops being
-a policy and becomes a permission.
-
-GitHub authenticates to Azure with an OIDC federated credential, so no client secret exists to leak
-or rotate.
-
-## One-time setup
-
-Create the federated credential and the repository secrets:
+### 1. Create an Entra app registration and a federated credential
 
 ```bash
-az ad app create --display-name certiflow-deploy
+az ad app create --display-name certiflow-deploy --query appId -o tsv
 ```
 
-Then add a federated credential for `repo:<owner>/certiflow:ref:refs/heads/main`, grant the service
-principal **Contributor** on the subscription (or on the environment resource groups plus
-`Microsoft.Authorization/roleAssignments/write`), and set these repository secrets:
+Take the `appId` it prints and create the service principal:
 
-| Secret | What it is |
+```bash
+az ad sp create --id <appId>
+```
+
+Then add the federated credential, which is what removes the need for a client secret. **Replace
+`<owner>` with your GitHub username**:
+
+```bash
+az ad app federated-credential create --id <appId> --parameters '{"name":"certiflow-main","issuer":"https://token.actions.githubusercontent.com","subject":"repo:<owner>/certiflow:ref:refs/heads/main","audiences":["api://AzureADTokenExchange"]}'
+```
+
+The `subject` is exact: a workflow running on any other branch will not be trusted, which is the
+point.
+
+### 2. Give it permission to deploy
+
+```bash
+az role assignment create --assignee <appId> --role Contributor --scope /subscriptions/<subscriptionId>
+```
+
+Contributor is not enough on its own. The Bicep creates role assignments — each service gets its own
+managed identity with its own permissions — and creating role assignments requires:
+
+```bash
+az role assignment create --assignee <appId> --role "Role Based Access Control Administrator" --scope /subscriptions/<subscriptionId>
+```
+
+### 3. Add the repository secrets
+
+`Settings → Secrets and variables → Actions`:
+
+| Secret | Value |
 |---|---|
-| `AZURE_CLIENT_ID` | App registration client id |
-| `AZURE_TENANT_ID` | Directory tenant id |
-| `AZURE_SUBSCRIPTION_ID` | Target subscription |
-| `AZURE_SQL_ADMIN_OBJECT_ID` | Entra object id that becomes SQL admin |
-| `AZURE_SQL_ADMIN_LOGIN` | Display name for that admin |
+| `AZURE_CLIENT_ID` | the `appId` from step 1 |
+| `AZURE_TENANT_ID` | your tenant id |
+| `AZURE_SUBSCRIPTION_ID` | your subscription id |
+| `AZURE_SQL_ADMIN_OBJECT_ID` | your Entra object id |
+| `AZURE_SQL_ADMIN_LOGIN` | your Entra sign-in name |
 
-The SQL server has **no SQL login at all** — `azureADOnlyAuthentication` is on, so the admin is an
-Entra principal and there is no password to store.
+Print all four with:
+
+```bash
+az account show --query "{subscription:id, tenant:tenantId}" -o json && az ad signed-in-user show --query "{objectId:id, login:userPrincipalName}" -o json
+```
+
+They are deliberately **not** written into this file. None of them is a credential, but a public
+repository is not the place for an account's identifiers and its owner's sign-in name — and a
+document that ships with one person's values invites the next reader to paste them in unchanged.
+
+The last two make **you** the SQL administrator. There is no SQL login and no password anywhere:
+the server is created with Entra-only authentication, so there is nothing to rotate and nothing to
+leak in a deployment log (NFR-9).
+
+### 4. Set a budget alert
+
+Not optional. SRS §20 R9: the realistic failure of this project is an environment that quietly stays
+up and bills. Alerts at $15 and $20 on the subscription.
 
 ## Deploying
 
-Actions → **Deploy** → Run workflow, with an environment name. Anything except `dev`, which is
-where the OpenAI account lives; the workflow refuses that name rather than trusting whoever typed
-it, because teardown deletes the environment's resource group wholesale.
+Actions → **Deploy** → Run workflow. Leave the environment name as `demo`.
 
-The run does four things in order:
+Do **not** use `dev`: that resolves to `rg-certiflow-dev`, which holds the Azure OpenAI account, and
+teardown deletes a resource group wholesale. The workflow refuses it, and so does the teardown
+script.
 
-1. **Provision** — `az deployment group create` against `infra/main.bicep`.
-2. **Build and push** eight images, in parallel, `fail-fast: false` so one failure does not hide the
-   other seven.
-3. **Apply migrations** — once, as a deploy step, never inside a service. Container Apps runs up to
-   two replicas and two replicas applying the same migration concurrently is how a deployment
-   corrupts a schema (NFR-19). `dotnet ef database update` is idempotent, so re-running a deployment
-   is safe.
-4. **Smoke test** — waits for `/health`, then asserts the gateway is serving its OIDC discovery
-   document. If discovery is broken every service fails to validate tokens, and it fails as a
-   confusing 401 rather than an obvious configuration error, so it is worth asserting explicitly.
+The run does five things in order:
 
-The smoke test also *warms* the gateway, which is what §20 R8 asks for instead of paying for a
-minimum replica around the clock.
+1. **Provision** — creates the resource group and everything in it from `infra/main.bicep`.
+2. **Build and push** nine container images in parallel. One `Dockerfile` builds all nine; only the
+   project path differs.
+3. **Apply migrations** — once, from the workflow, never from a service. Container Apps runs several
+   replicas, and several replicas applying the same migration is how a deployment corrupts a schema
+   (NFR-19). The scripts are idempotent, so re-running a deployment is safe.
+4. **Smoke test** — waits for the gateway, then asserts the OIDC discovery document is being served.
+   If that is wrong every service fails to validate tokens, and it fails as a confusing 401 rather
+   than an obvious misconfiguration.
+5. **Summary** — prints the gateway URL and the teardown command.
 
-## Cold starts are deliberate
-
-Every app has `minReplicas: 0`. The first request after a quiet period pays a cold start. Paying for
-a warm replica 24/7 to avoid that would cost more than the whole recording session.
-
-**Warm the services by hitting them once before recording.**
+Every service scales to zero, so the first request after a quiet period pays a cold start. The smoke
+test both proves the deployment and warms the gateway, which is what §20 R8 asks for instead of
+paying for a minimum replica around the clock.
 
 ## Tearing down
 
 ```bash
-bash scripts/teardown.sh <environment>
+bash scripts/teardown.sh demo
 ```
 
-It refuses to delete a group that is not tagged `managedBy=bicep`, and refuses again if the group
-contains a Cognitive Services account. Both guards are deliberate: teardown is run by hand, and by
-hand is exactly when the wrong environment name gets typed.
+It lists what it is about to delete, requires the environment name typed back, and **waits**.
+`--no-wait` would return in seconds and leave you believing the meter had stopped; deletion takes
+minutes, and a half-deleted environment is still billing.
 
-It does **not** pass `--no-wait`. Returning in seconds would let the caller believe the meter had
-stopped when deletion takes minutes, and a half-deleted environment is still billing. Waiting is the
-entire point of a teardown script.
+It refuses any resource group not tagged `managedBy=bicep`, and refuses `rg-certiflow-dev` outright.
 
-```bash
-az group list --query "[?starts_with(name,'rg-certiflow')].name" -o tsv
-```
+The Azure OpenAI account is never deleted. It lives outside every deployed environment, bills per
+token rather than per hour, and recreating its model deployment costs time and quota.
 
-Run that after a session. It is the cheapest possible check against R9.
+## What has been verified, and what has not
 
-## Measured, not estimated
+The template **validates against the live subscription** — Azure accepted the whole thing, including
+the role assignments, Container Apps environment, serverless SQL and Service Bus.
 
-Rehearsed end to end on 2026-08-21 into `rg-certiflow-demo`, from an empty resource group.
-
-| Step | Time |
-|---|---|
-| Pass one — everything except the container apps | 72 s |
-| Build and push 8 images (4 concurrent, cold cache) | ~11 min |
-| Pass two — the container apps | 132 s |
-| Migrations, 7 contexts | 141 s |
-| First healthy response from the gateway | < 30 s |
-
-**Comfortably inside NFR-3's 30 minutes**, and the image build dominates it — on a GitHub runner
-with a warm layer cache that step is far shorter, and the eight builds run in parallel rather than
-four.
-
-What the rehearsal proved beyond "it deploys": a profile published, a supplier registered, a
-document uploaded by the supplier account, **a live gpt-5-mini extraction scoring 0.80**, the
-uploader refused their own approval, a reviewer approving it, the supplier turning Compliant, a
-report generated and downloaded from Blob Storage by user-delegation SAS, and an audit chain of 32
-entries verifying valid.
-
-It also found seven faults that no amount of template validation would have. They are listed in the
-commit that fixed them; the short version is that **every one of them was invisible locally**,
-because a laptop supplies a connection string for everything and Azure supplies a connection string
-for nothing.
-
-### Teardown takes longer than deletion appears to
-
-`az group delete` returns when the group is gone, but the **Container Apps managed environment alone
-takes 15–30 minutes**. Twenty-four of twenty-five resources were removed within about two minutes;
-the environment held the group open long after everything billable inside it had stopped.
-
-Do not interpret a slow teardown as a stuck one, and do not `--no-wait` it — the script waits on
-purpose, because a half-deleted environment is still an environment.
+Not yet verified, because nothing has been deployed: the 30-minute unattended rebuild (NFR-3), the
+teardown rehearsal, and the cold-start behaviour of a nine-service environment scaled to zero. Those
+are acceptance criteria, and they are not met until a deployment has actually run.

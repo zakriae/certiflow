@@ -21,6 +21,14 @@ fi
 
 GROUP="rg-certiflow-${ENVIRONMENT}"
 
+# The Azure OpenAI account lives in rg-certiflow-dev and is deliberately outside every deployed
+# environment: this script deletes a resource group wholesale, and the account holds a model
+# deployment that costs time and quota to recreate.
+if [ "$GROUP" = "rg-certiflow-dev" ]; then
+  echo "Refusing: rg-certiflow-dev holds the Azure OpenAI account and is not a deployed environment." >&2
+  exit 1
+fi
+
 if ! az group show --name "$GROUP" --output none 2>/dev/null; then
   echo "$GROUP does not exist. Nothing to do."
   exit 0
