@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Certiflow.Cqrs;
 using Certiflow.Http;
 using System.Reflection;
@@ -58,7 +59,7 @@ app.MapPost("/api/documents", async (
     [FromForm] Guid supplierId,
     [FromForm] Guid requirementId,
     [FromForm] string documentType,
-    [FromForm] string? uploadedBy,
+    ClaimsPrincipal user,
     ISender sender,
     CancellationToken cancellationToken) =>
 {
@@ -71,10 +72,10 @@ app.MapPost("/api/documents", async (
         file.FileName,
         file.ContentType,
         content,
-        // Until authentication lands this is supplied by the caller. The segregation-of-duties
-        // rule in Verification compares against it, so it becomes a claim rather than a form field
-        // the moment auth exists - a caller must not get to name themselves.
-        uploadedBy ?? "supplier@certiflow.demo");
+        // From the token, not a form field. This is the value Verification's segregation-of-duties
+        // rule compares an approver against, so while the caller supplied it the rule could be
+        // defeated by typing a different name into the form.
+        user.EmailOf());
 
     var result = await sender.Send(command, cancellationToken);
 
@@ -83,6 +84,7 @@ app.MapPost("/api/documents", async (
     return Results.Accepted($"/api/documents/{result.DocumentId}", result);
 })
 .DisableAntiforgery()
+.RequireAuthorization(CertiflowPolicies.Upload)
 .WithName("UploadDocument");
 
 app.MapGet("/api/documents/{id:guid}", async (

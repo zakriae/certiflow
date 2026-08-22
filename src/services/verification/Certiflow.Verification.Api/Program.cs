@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Certiflow.Cqrs;
 using Certiflow.Http;
 using Certiflow.Persistence;
@@ -148,47 +149,57 @@ app.MapGet("/api/review-tasks/{id:guid}", async (
     });
 });
 
+// The reviewer comes from the token on all three of these, never from the body.
+//
+// It used to come from the body, and that made two guarantees decorative: segregation of duties
+// compared two caller-supplied strings, so approving your own upload needed nothing more than
+// typing a different name; and the audit trail's central claim - that it records who did what -
+// recorded whoever the caller said they were. Hash-chaining a lie preserves it perfectly.
 app.MapPost("/api/review-tasks/{id:guid}/fields", async (
     Guid id,
     ResolveFieldRequest request,
+    ClaimsPrincipal user,
     ISender sender,
     CancellationToken cancellationToken) =>
 {
     await sender.Send(
-        new ResolveFieldCommand(id, request.FieldName, request.AcceptedValue, request.ReviewerId, request.ReviewerNote),
+        new ResolveFieldCommand(id, request.FieldName, request.AcceptedValue, user.EmailOf(), request.ReviewerNote),
         cancellationToken);
 
     return Results.NoContent();
-});
+})
+.RequireAuthorization(CertiflowPolicies.Reviewer);
 
 app.MapPost("/api/review-tasks/{id:guid}/approve", async (
     Guid id,
-    ApproveRequest request,
+    ClaimsPrincipal user,
     ISender sender,
     CancellationToken cancellationToken) =>
 {
-    await sender.Send(new ApproveDocumentCommand(id, request.ReviewerId), cancellationToken);
+    // No request body at all now. There is nothing left for a caller to say about who they are.
+    await sender.Send(new ApproveDocumentCommand(id, user.EmailOf()), cancellationToken);
 
     return Results.NoContent();
-});
+})
+.RequireAuthorization(CertiflowPolicies.Reviewer);
 
 app.MapPost("/api/review-tasks/{id:guid}/reject", async (
     Guid id,
     RejectRequest request,
+    ClaimsPrincipal user,
     ISender sender,
     CancellationToken cancellationToken) =>
 {
     await sender.Send(
-        new RejectDocumentCommand(id, request.ReviewerId, request.Reason, request.ReasonNote),
+        new RejectDocumentCommand(id, user.EmailOf(), request.Reason, request.ReasonNote),
         cancellationToken);
 
     return Results.NoContent();
-});
+})
+.RequireAuthorization(CertiflowPolicies.Reviewer);
 
 app.Run();
 
-internal sealed record ResolveFieldRequest(string FieldName, string? AcceptedValue, string ReviewerId, string? ReviewerNote);
+internal sealed record ResolveFieldRequest(string FieldName, string? AcceptedValue, string? ReviewerNote);
 
-internal sealed record ApproveRequest(string ReviewerId);
-
-internal sealed record RejectRequest(string ReviewerId, RejectionReason Reason, string? ReasonNote);
+internal sealed record RejectRequest(RejectionReason Reason, string? ReasonNote);

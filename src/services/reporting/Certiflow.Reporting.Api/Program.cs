@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Certiflow.Cqrs;
 using Certiflow.Http;
 using Certiflow.Persistence;
@@ -50,15 +51,14 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "repo
 // if the process recycled mid-render.
 app.MapPost("/api/reports/suppliers/{supplierId:guid}", async (
     Guid supplierId,
-    RequestReportRequest? request,
+    ClaimsPrincipal user,
     ISender sender,
     CancellationToken cancellationToken) =>
 {
     var reportId = await sender.Send(
-        // Until authentication lands the caller names themselves, exactly as with document upload.
-        // This becomes a claim the moment auth exists - the name on an attestation is not something
-        // its requester should get to choose.
-        new RequestReportCommand(supplierId, request?.RequestedBy ?? "buyer@certiflow.demo"),
+        // From the token. The requester's name is printed on the certificate and recorded in the
+        // audit trail, and the name on an attestation is not something its requester should choose.
+        new RequestReportCommand(supplierId, user.EmailOf()),
         cancellationToken);
 
     return Results.Accepted($"/api/reports/{reportId.Value}", new { reportId = reportId.Value, status = "Requested" });
@@ -183,4 +183,3 @@ app.MapGet("/api/reports/{reportId:guid}/verify", async (
 
 app.Run();
 
-internal sealed record RequestReportRequest(string? RequestedBy);

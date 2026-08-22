@@ -85,8 +85,10 @@ export class PortfolioApi {
     return this.http.get<readonly ReportSummary[]>(`/api/reports/suppliers/${supplierId}`);
   }
 
-  requestReport(supplierId: string, requestedBy: string): Observable<{ readonly reportId: string }> {
-    return this.http.post<{ readonly reportId: string }>(`/api/reports/suppliers/${supplierId}`, { requestedBy });
+  // The requester comes from the token: their name is printed on the certificate and recorded in
+  // the audit trail, so it is not theirs to choose.
+  requestReport(supplierId: string): Observable<{ readonly reportId: string }> {
+    return this.http.post<{ readonly reportId: string }>(`/api/reports/suppliers/${supplierId}`, {});
   }
 
   report(reportId: string): Observable<ReportSummary> {

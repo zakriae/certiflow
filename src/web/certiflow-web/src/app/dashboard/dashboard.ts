@@ -83,11 +83,9 @@ export class Dashboard {
   }
 
   protected requestReport(supplierId: string): void {
-    const requestedBy = this.auth.current()?.email ?? 'unknown@certiflow.demo';
-
     this.busySupplier.set(supplierId);
 
-    this.api.requestReport(supplierId, requestedBy).subscribe({
+    this.api.requestReport(supplierId).subscribe({
       next: ({ reportId }) => this.poll(supplierId, reportId, 0),
       error: () => {
         this.busySupplier.set(null);

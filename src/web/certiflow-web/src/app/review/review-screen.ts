@@ -26,17 +26,13 @@ export class ReviewScreen {
   private readonly auth = inject(Auth);
 
   /**
-   * The signed-in user, no longer a hard-coded demo identity.
+   * Shown in the header, and sent nowhere.
    *
-   * This matters for more than tidiness: the segregation-of-duties rule compares the approver
-   * against the uploader, and while every reviewer claimed to be reviewer@certiflow.demo the rule
-   * could only ever be demonstrated, never actually exercised by two different people.
-   *
-   * It is still a value the client sends. The server should read it from the token instead - the
-   * approver's identity is not something a caller should get to name - and that is the remaining
-   * step now that a token exists to read it from.
+   * The reviewer's identity now travels in the bearer token and the server reads it from there.
+   * While the client sent it, segregation of duties compared two caller-supplied strings and could
+   * be defeated by typing a different name.
    */
-  protected readonly reviewerId = computed(() => this.auth.current()?.email ?? 'unknown@certiflow.demo');
+  protected readonly reviewerId = computed(() => this.auth.current()?.email ?? 'unknown');
 
   protected readonly task = signal<ReviewTaskDetail | null>(null);
   protected readonly documentUrl = signal<string | null>(null);
@@ -138,7 +134,7 @@ export class ReviewScreen {
 
     this.busy.set(true);
 
-    this.api.resolveField(task.reviewTaskId, field.fieldName, value, this.reviewerId()).subscribe({
+    this.api.resolveField(task.reviewTaskId, field.fieldName, value).subscribe({
       next: () => {
         this.busy.set(false);
         this.open(task.reviewTaskId);
@@ -156,7 +152,7 @@ export class ReviewScreen {
 
     this.busy.set(true);
 
-    this.api.approve(task.reviewTaskId, this.reviewerId()).subscribe({
+    this.api.approve(task.reviewTaskId).subscribe({
       next: () => {
         this.busy.set(false);
         this.loadQueue();
@@ -175,7 +171,7 @@ export class ReviewScreen {
 
     this.busy.set(true);
 
-    this.api.reject(task.reviewTaskId, this.reviewerId(), 'Illegible', null).subscribe({
+    this.api.reject(task.reviewTaskId, 'Illegible', null).subscribe({
       next: () => {
         this.busy.set(false);
         this.loadQueue();

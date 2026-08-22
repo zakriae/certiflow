@@ -70,19 +70,20 @@ export class ReviewApi {
     return this.http.get<DocumentLink>(`/api/documents/${documentId}/link`);
   }
 
-  resolveField(taskId: string, fieldName: string, acceptedValue: string, reviewerId: string) {
+  // No reviewerId on any of these. The server reads the reviewer from the bearer token, because a
+  // caller who names themselves can defeat segregation of duties by typing a different name.
+  resolveField(taskId: string, fieldName: string, acceptedValue: string) {
     return this.http.post<void>(`/api/review-tasks/${taskId}/fields`, {
       fieldName,
       acceptedValue,
-      reviewerId,
     });
   }
 
-  approve(taskId: string, reviewerId: string) {
-    return this.http.post<void>(`/api/review-tasks/${taskId}/approve`, { reviewerId });
+  approve(taskId: string) {
+    return this.http.post<void>(`/api/review-tasks/${taskId}/approve`, {});
   }
 
-  reject(taskId: string, reviewerId: string, reason: string, reasonNote: string | null) {
-    return this.http.post<void>(`/api/review-tasks/${taskId}/reject`, { reviewerId, reason, reasonNote });
+  reject(taskId: string, reason: string, reasonNote: string | null) {
+    return this.http.post<void>(`/api/review-tasks/${taskId}/reject`, { reason, reasonNote });
   }
 }
