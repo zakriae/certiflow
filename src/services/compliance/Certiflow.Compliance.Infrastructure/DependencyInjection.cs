@@ -33,6 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IComplianceProfileStore, ComplianceProfileStore>();
         services.AddScoped<IUnitOfWork, ComplianceUnitOfWork>();
 
+        services.Configure<ExpiryWatchOptions>(configuration.GetSection(ExpiryWatchOptions.SectionName));
+        services.AddHostedService<ExpiryWatchScheduler>();
+
         return services;
     }
 
