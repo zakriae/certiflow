@@ -195,6 +195,18 @@ The proxy now has exactly two entries, both pointing at the gateway on 5000 — 
 earning its place. It used to list every service individually, and every new service meant another
 line that existed only in development and had no counterpart in Azure.
 
+### The screens
+
+| Screen | Who sees it | What it is for |
+|---|---|---|
+| Dashboard | everyone | Portfolio counts, non-compliant list, all suppliers with filters (FR-5.3, FR-1.6) |
+| Supplier | everyone | One supplier obligation by obligation, with the evidence behind each (FR-5.2) |
+| Upload | supplier, reviewer, admin | Drag a PDF into extraction (FR-2.1) |
+| Review queue | reviewer, admin | Document beside its fields, citations that navigate (FR-4.2) |
+| Audit trail | auditor, reviewer, admin | The ledger, filters, and Verify chain (FR-8.3, FR-8.4) |
+| Notifications | everyone | The in-app inbox, because mail is off (FR-7.4, FR-7.8) |
+| Admin | admin | Register suppliers, publish compliance profiles (FR-1.1, FR-1.2, FR-1.3) |
+
 Sign in at http://localhost:4200 with any of the demo accounts; the shared password is printed on
 the screen and fetched from the gateway, so there is one place it is defined.
 
