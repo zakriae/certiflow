@@ -114,10 +114,38 @@ az group list --query "[?starts_with(name,'rg-certiflow')].name" -o tsv
 
 Run that after a session. It is the cheapest possible check against R9.
 
-## What is not yet proven
+## Measured, not estimated
 
-**This has not been deployed end to end.** The templates compile, the images build and run as
-non-root with `dotnet` as PID 1, the migration and teardown paths are exercised locally — but no
-Azure deployment has been run from this repository, so the 30-minute NFR-3 target is a design
-intent, not a measurement. It should be rehearsed once, timed, before it is relied on for a
-recording.
+Rehearsed end to end on 2026-08-21 into `rg-certiflow-demo`, from an empty resource group.
+
+| Step | Time |
+|---|---|
+| Pass one — everything except the container apps | 72 s |
+| Build and push 8 images (4 concurrent, cold cache) | ~11 min |
+| Pass two — the container apps | 132 s |
+| Migrations, 7 contexts | 141 s |
+| First healthy response from the gateway | < 30 s |
+
+**Comfortably inside NFR-3's 30 minutes**, and the image build dominates it — on a GitHub runner
+with a warm layer cache that step is far shorter, and the eight builds run in parallel rather than
+four.
+
+What the rehearsal proved beyond "it deploys": a profile published, a supplier registered, a
+document uploaded by the supplier account, **a live gpt-5-mini extraction scoring 0.80**, the
+uploader refused their own approval, a reviewer approving it, the supplier turning Compliant, a
+report generated and downloaded from Blob Storage by user-delegation SAS, and an audit chain of 32
+entries verifying valid.
+
+It also found seven faults that no amount of template validation would have. They are listed in the
+commit that fixed them; the short version is that **every one of them was invisible locally**,
+because a laptop supplies a connection string for everything and Azure supplies a connection string
+for nothing.
+
+### Teardown takes longer than deletion appears to
+
+`az group delete` returns when the group is gone, but the **Container Apps managed environment alone
+takes 15–30 minutes**. Twenty-four of twenty-five resources were removed within about two minutes;
+the environment held the group open long after everything billable inside it had stopped.
+
+Do not interpret a slow teardown as a stuck one, and do not `--no-wait` it — the script waits on
+purpose, because a half-deleted environment is still an environment.
