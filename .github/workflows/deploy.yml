@@ -117,6 +117,7 @@ jobs:
           - { image: compliance,   project: src/services/compliance/Certiflow.Compliance.Api,                 dll: Certiflow.Compliance.Api.dll }
           - { image: audit,        project: src/services/audit-trail/Certiflow.Audit.Api,                     dll: Certiflow.Audit.Api.dll }
           - { image: reporting,    project: src/services/reporting/Certiflow.Reporting.Api,                   dll: Certiflow.Reporting.Api.dll }
+          - { image: notifications, project: src/services/notification/Certiflow.Notifications.Api,          dll: Certiflow.Notifications.Api.dll }
           - { image: worker,       project: src/services/document-intelligence/Certiflow.Intelligence.Worker, dll: Certiflow.Intelligence.Worker.dll }
     steps:
       - uses: actions/checkout@v4
@@ -225,6 +226,7 @@ jobs:
             "compliance|Certiflow.Compliance|ComplianceDbContext|Api"
             "audit-trail|Certiflow.Audit|AuditDbContext|Api"
             "reporting|Certiflow.Reporting|ReportingDbContext|Api"
+            "notification|Certiflow.Notifications|NotificationsDbContext|Api"
           )
 
           for entry in "${CONTEXTS[@]}"; do

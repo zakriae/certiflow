@@ -43,7 +43,7 @@ on a laptop. Management UI at http://localhost:15672 (guest/guest).
 
 ## Running the services
 
-Eight processes. Start order does not matter — each creates its own schema, and the compliance state
+Nine processes. Start order does not matter — each creates its own schema, and the compliance state
 reconciles itself on read if the profile and the supplier arrive out of order (ADR-0005 covers the
 related delivery hazard).
 
@@ -55,6 +55,7 @@ related delivery hazard).
 | Compliance | 5300 |
 | Audit Trail | 5310 |
 | Reporting | 5320 |
+| Notifications | 5330 |
 | Gateway | 5000 |
 | Intelligence worker | (no HTTP) |
 
@@ -341,3 +342,34 @@ Builds once, then starts the gateway, six APIs and the worker, and waits until a
 The single build is not a convenience. Starting them with plain `dotnet run` makes six MSBuild
 processes compile the same shared projects into the same `obj/` simultaneously, and they fail on
 each other's file locks — which prints "the build failed" six times and is really a race.
+
+## Notifications
+
+Outbound email is **off**, and turning it on takes a deliberate config change
+(`Notifications:OutboundEmailEnabled`). FR-7.8 is not a preference: a publicly reachable demo that
+can send mail to any address anyone types is an open relay with extra steps. Every message is
+recorded and shown in the in-app inbox instead, marked *held — not sent*.
+
+```bash
+curl -s http://localhost:5000/api/notifications -H "Authorization: Bearer <token>"
+```
+
+A supplier user sees only their own; the service narrows the query by the `supplier_id` claim rather
+than trusting a parameter (NFR-8).
+
+### Watching the reminders deduplicate
+
+The expiry sweep runs on a timer — every two minutes in development, daily elsewhere — so a
+certificate crossing into its renewal window raises `CertificateExpiringSoon` on *every* sweep.
+FR-7.5 asks for one reminder per document per window, ever.
+
+Approve a certificate with a corrected expiry inside a window (a reviewer can edit `expiresOn`),
+then run the sweep by hand as many times as you like:
+
+```bash
+curl -s -X POST http://localhost:5000/api/expiry-watch -H "Authorization: Bearer <admin-token>" -H "Content-Type: application/json" -d '{}'
+```
+
+The inbox gains exactly one reminder and stays at one. That is a unique index on
+`(document, window)`, not a check-then-insert — two deliveries of the same event would both pass a
+check and both insert.

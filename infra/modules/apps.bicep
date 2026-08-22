@@ -64,6 +64,7 @@ var services = [
   { name: 'compliance',   image: 'compliance',   external: false, storage: false, openAi: false }
   { name: 'audit',        image: 'audit',        external: false, storage: false, openAi: false }
   { name: 'reporting',    image: 'reporting',    external: false, storage: true,  openAi: false }
+  { name: 'notifications', image: 'notifications', external: false, storage: false, openAi: false }
   { name: 'worker',       image: 'worker',       external: false, storage: true,  openAi: true  }
 ]
 
@@ -201,6 +202,7 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
             { name: 'ConnectionStrings__ComplianceDatabase', value: sqlConnectionString }
             { name: 'ConnectionStrings__AuditDatabase', value: sqlConnectionString }
             { name: 'ConnectionStrings__ReportingDatabase', value: sqlConnectionString }
+            { name: 'ConnectionStrings__NotificationsDatabase', value: sqlConnectionString }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
             { name: 'Auth__Authority', value: 'https://${gatewayAppName}.${environment.properties.defaultDomain}' }
             { name: 'Auth__Audience', value: 'certiflow-api' }
@@ -233,6 +235,7 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
             { name: 'ReverseProxy__Clusters__compliance__Destinations__primary__Address', value: 'https://${complianceAppName}.${internalSuffix}' }
             { name: 'ReverseProxy__Clusters__audit__Destinations__primary__Address', value: 'https://ca-audit-${stem}.${internalSuffix}' }
             { name: 'ReverseProxy__Clusters__reporting__Destinations__primary__Address', value: 'https://ca-reporting-${stem}.${internalSuffix}' }
+            { name: 'ReverseProxy__Clusters__notifications__Destinations__primary__Address', value: 'https://ca-notifications-${stem}.${internalSuffix}' }
           ] : [], service.name == 'reporting' ? [
             { name: 'Services__Compliance', value: 'https://${complianceAppName}.${internalSuffix}' }
             { name: 'Services__Registry', value: 'https://${registryAppName}.${internalSuffix}' }
@@ -276,7 +279,13 @@ resource apps 'Microsoft.App/containerApps@2024-03-01' = [for (service, i) in se
 output gatewayUrl string = 'https://${apps[0].properties.configuration.ingress.fqdn}'
 // The worker's principal, so the OpenAI role assignment can be made in the account's own resource
 // group - which is deliberately not this one. See modules/openai-access.bicep.
-output workerPrincipalId string = identities[7].properties.principalId
+//
+// Found by index, not by position: this was identities[7] until a ninth service was inserted above
+// the worker, at which point it would have granted OpenAI access to the notification service and
+// left the only thing that calls OpenAI without it.
+var workerIndex = indexOf(map(services, service => service.name), 'worker')
+
+output workerPrincipalId string = identities[workerIndex].properties.principalId
 
 output identityPrincipalIds array = [for (service, i) in services: {
   service: service.name

@@ -102,6 +102,7 @@ jobs:
             "compliance|Certiflow.Compliance|ComplianceDbContext|Api"
             "audit-trail|Certiflow.Audit|AuditDbContext|Api"
             "reporting|Certiflow.Reporting|ReportingDbContext|Api"
+            "notification|Certiflow.Notifications|NotificationsDbContext|Api"
           )
 
           failed=0
