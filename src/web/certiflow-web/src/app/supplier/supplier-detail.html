@@ -1,0 +1,91 @@
+<section class="detail">
+  <a class="back" routerLink="/dashboard">← Portfolio</a>
+
+  <header>
+    <div>
+      <h1>{{ name() }}</h1>
+      @if (compliance(); as state) {
+        <p class="meta">
+          <span class="badge" [class]="'is-' + state.overallStatus">{{ state.overallStatus }}</span>
+          Compliance profile v{{ state.profileVersion }}
+          @if (state.lastEvaluatedAt) {
+            · last evaluated {{ state.lastEvaluatedAt | date: 'dd MMM yyyy HH:mm' }}
+          }
+        </p>
+      }
+    </div>
+
+    <button type="button" (click)="requestReport()" [disabled]="busy()">
+      {{ busy() ? 'Generating…' : 'Generate report' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (compliance(); as state) {
+    <h2>Obligations</h2>
+
+    <ul class="obligations">
+      @for (obligation of state.obligations; track obligation.requirementId) {
+        <li>
+          <div class="row">
+            <div>
+              <span class="type">{{ obligation.documentType }}</span>
+              <span class="tag">{{ obligation.isMandatory ? 'Mandatory' : 'Optional' }}</span>
+            </div>
+            <span class="status" [class]="'is-' + obligation.status">{{ obligation.status }}</span>
+          </div>
+
+          @if (obligation.evidence; as evidence) {
+            <dl class="evidence">
+              <div><dt>Certificate</dt><dd>{{ evidence.certificateNumber }}</dd></div>
+              <div><dt>Issuer</dt><dd>{{ evidence.issuer }}</dd></div>
+              <div><dt>Issued to</dt><dd>{{ evidence.holderName }}</dd></div>
+              <div>
+                <dt>Valid until</dt>
+                <dd>
+                  {{ evidence.expiresOn }}
+                  @if (obligation.daysRemaining !== null) {
+                    <span class="days" [class.urgent]="obligation.daysRemaining <= 60">
+                      ({{ obligation.daysRemaining < 0 ? 'expired' : obligation.daysRemaining + ' days' }})
+                    </span>
+                  }
+                </dd>
+              </div>
+              <div class="wide">
+                <dt>Approved by</dt>
+                <dd>{{ evidence.approvedBy }} on {{ evidence.approvedAt | date: 'dd MMM yyyy' }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <p class="no-evidence">No approved evidence for this requirement.</p>
+          }
+
+          @if (obligation.historyCount > 0) {
+            <p class="history">{{ obligation.historyCount }} superseded certificate(s) retained.</p>
+          }
+        </li>
+      } @empty {
+        <li class="empty">No obligations. This supplier's category has no published profile yet.</li>
+      }
+    </ul>
+
+    <h2>Reports</h2>
+    <ul class="reports">
+      @for (report of reports().slice(0, 5); track report.reportId) {
+        <li>
+          <span class="rstatus" [class.ok]="report.status === 'Completed'">{{ report.status }}</span>
+          <span>{{ report.requestedBy }}</span>
+          <span class="when">{{ report.requestedAt | date: 'dd MMM HH:mm' }}</span>
+          @if (report.status === 'Completed') {
+            <button type="button" class="link" (click)="download(report.reportId)">Download</button>
+          }
+        </li>
+      } @empty {
+        <li class="empty">No reports generated yet.</li>
+      }
+    </ul>
+  }
+</section>

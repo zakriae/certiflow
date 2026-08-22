@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { AuditApi, AuditEntry, ChainVerification } from '../core/audit-api';
+import { Component, computed, inject, signal } from '@angular/core';
+import { AuditApi, AuditEntry, AuditFilters, ChainVerification } from '../core/audit-api';
 
 /**
  * The audit trail, and the screen that makes the hash chain mean something to a viewer.
@@ -25,12 +25,36 @@ export class AuditTrail {
   protected readonly verifying = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly entityId = signal('');
+  protected readonly actor = signal('');
+  protected readonly from = signal('');
+  protected readonly to = signal('');
+
+  /** Distinct actors seen in the current results, so filtering by person is a pick, not a spelling test. */
+  protected readonly actors = computed(() =>
+    [...new Set(this.entries().map((e) => e.actor))].sort());
+
   constructor() {
     this.load();
   }
 
+  protected clearFilters(): void {
+    this.entityId.set('');
+    this.actor.set('');
+    this.from.set('');
+    this.to.set('');
+    this.load();
+  }
+
   protected load(): void {
-    this.api.entries().subscribe({
+    const filters: AuditFilters = {
+      entityId: this.entityId().trim() || undefined,
+      actor: this.actor() || undefined,
+      from: this.from() || undefined,
+      to: this.to() || undefined,
+    };
+
+    this.api.entries(filters).subscribe({
       next: (entries) => this.entries.set(entries),
       error: () => this.error.set('The audit trail could not be loaded.'),
     });

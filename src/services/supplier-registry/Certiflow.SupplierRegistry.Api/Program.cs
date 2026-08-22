@@ -96,10 +96,46 @@ app.MapGet("/api/categories/{categoryId:guid}", async (Guid categoryId, Registry
     });
 });
 
-app.MapGet("/api/suppliers", async (RegistryDbContext db, CancellationToken ct) =>
-    Results.Ok(await db.Suppliers.AsNoTracking()
-        .Select(s => new { supplierId = s.Id.Value, s.LegalName, categoryId = s.CategoryId, status = s.Status.ToString() })
-        .ToListAsync(ct)));
+// FR-1.6's filters. Country was missing from the projection entirely, so "filter by country" had no
+// data to work with even though the aggregate has held it since BC1 was written.
+app.MapGet("/api/suppliers", async (
+    Guid? categoryId,
+    string? country,
+    string? status,
+    RegistryDbContext db,
+    CancellationToken ct) =>
+{
+    var query = db.Suppliers.AsNoTracking().AsQueryable();
+
+    if (categoryId is { } category) { query = query.Where(s => s.CategoryId == new CategoryId(category)); }
+
+    // Filtering happens in SQL, not after materialising every supplier: NFR-2 gives list views
+    // 500 ms and "fetch everything then filter in memory" is the shape that stops meeting that
+    // exactly when the data gets interesting.
+    if (!string.IsNullOrWhiteSpace(country))
+    {
+        query = query.Where(s => s.Country.Value == country);
+    }
+
+    if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SupplierStatus>(status, ignoreCase: true, out var parsed))
+    {
+        query = query.Where(s => s.Status == parsed);
+    }
+
+    return Results.Ok(await query
+        .OrderBy(s => s.LegalName)
+        .Select(s => new
+        {
+            supplierId = s.Id.Value,
+            s.LegalName,
+            s.TradingName,
+            registrationNumber = s.RegistrationNumber.Value,
+            country = s.Country.Value,
+            categoryId = s.CategoryId,
+            status = s.Status.ToString(),
+        })
+        .ToListAsync(ct));
+});
 
 app.Run();
 

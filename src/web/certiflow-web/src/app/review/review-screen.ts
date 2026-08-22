@@ -162,18 +162,60 @@ export class ReviewScreen {
     });
   }
 
-  protected reject(): void {
+  /**
+   * The controlled list from the domain's RejectionReason (FR-4.6).
+   *
+   * These are not decoration. The reason is emailed to the supplier and is the only thing telling
+   * them what to fix, and the reject button used to send 'Illegible' whatever the actual problem
+   * was - so a supplier whose certificate was issued to the wrong legal entity was told their scan
+   * was blurry, and would have re-scanned it.
+   */
+  protected readonly rejectionReasons = [
+    { value: 'Illegible', label: 'The scan is unreadable' },
+    { value: 'AlreadyExpired', label: 'Already expired when submitted' },
+    { value: 'WrongDocumentType', label: 'Not the document type required' },
+    { value: 'HolderMismatch', label: 'Issued to a different organisation' },
+    { value: 'IssuerNotAccepted', label: 'Issuer not accepted for this requirement' },
+    { value: 'Incomplete', label: 'Pages or details are missing' },
+    { value: 'SuspectedForgery', label: 'Signs of tampering' },
+    { value: 'Other', label: 'Something else (note required)' },
+  ] as const;
+
+  protected readonly rejecting = signal(false);
+  protected readonly rejectionReason = signal<string>('Illegible');
+  protected readonly rejectionNote = signal<string>('');
+
+  protected startReject(): void {
+    this.rejecting.set(true);
+    this.error.set(null);
+  }
+
+  protected cancelReject(): void {
+    this.rejecting.set(false);
+    this.rejectionNote.set('');
+  }
+
+  protected confirmReject(): void {
     const task = this.task();
 
     if (!task) {
       return;
     }
 
+    // 'Other' without a note is indistinguishable from no reason at all, which is what the domain
+    // says too - better to stop here than to send the supplier an empty explanation.
+    if (this.rejectionReason() === 'Other' && this.rejectionNote().trim() === '') {
+      this.error.set('A note is required when the reason is "Something else".');
+      return;
+    }
+
     this.busy.set(true);
 
-    this.api.reject(task.reviewTaskId, 'Illegible', null).subscribe({
+    this.api.reject(task.reviewTaskId, this.rejectionReason(), this.rejectionNote().trim() || null).subscribe({
       next: () => {
         this.busy.set(false);
+        this.rejecting.set(false);
+        this.rejectionNote.set('');
         this.loadQueue();
         this.open(task.reviewTaskId);
       },

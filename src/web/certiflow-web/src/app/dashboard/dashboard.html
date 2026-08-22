@@ -34,7 +34,7 @@
             <li>
               <div class="row">
                 <div class="who">
-                  <span class="name">{{ nameOf(supplier.supplierId) }}</span>
+                  <a class="name" [routerLink]="['/suppliers', supplier.supplierId]">{{ nameOf(supplier.supplierId) }}</a>
                   <span class="missing">
                     @for (b of supplier.breached; track b.documentType) {
                       <span class="chip">{{ b.documentType }} — {{ b.status }}</span>
@@ -74,14 +74,33 @@
     </section>
 
     <section class="block">
-      <h2>All suppliers</h2>
+      <div class="block-head">
+        <h2>All suppliers</h2>
+
+        <div class="filters">
+          <select [value]="countryFilter()" (change)="countryFilter.set($any($event.target).value)">
+            <option value="">All countries</option>
+            @for (country of countries(); track country) {
+              <option [value]="country">{{ country }}</option>
+            }
+          </select>
+
+          <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+            <option value="">Any compliance status</option>
+            <option value="Compliant">Compliant</option>
+            <option value="NonCompliant">Non-compliant</option>
+            <option value="AtRisk">At risk</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
 
       <ul class="suppliers">
-        @for (supplier of v.suppliers; track supplier.supplierId) {
+        @for (supplier of visibleSuppliers(); track supplier.supplierId) {
           <li>
             <div class="row">
               <div class="who">
-                <span class="name">{{ nameOf(supplier.supplierId) }}</span>
+                <a class="name" [routerLink]="['/suppliers', supplier.supplierId]">{{ nameOf(supplier.supplierId) }}</a>
                 <span class="meta">
                   <span class="badge" [class]="'is-' + supplier.overallStatus">{{ supplier.overallStatus }}</span>
                   {{ supplier.mandatorySatisfied }} of {{ supplier.mandatoryTotal }} mandatory requirements met
@@ -120,6 +139,8 @@
               </ul>
             }
           </li>
+        } @empty {
+          <li class="empty-row">No supplier matches those filters.</li>
         }
       </ul>
     </section>

@@ -41,6 +41,8 @@ app.MapGet("/api/audit", async (
     string? entityId,
     Guid? correlationId,
     string? actor,
+    DateTimeOffset? from,
+    DateTimeOffset? to,
     int? take,
     CancellationToken cancellationToken) =>
 {
@@ -49,6 +51,12 @@ app.MapGet("/api/audit", async (
     if (!string.IsNullOrWhiteSpace(entityId)) { query = query.Where(e => e.EntityId == entityId); }
     if (correlationId is { } correlation) { query = query.Where(e => e.CorrelationId == correlation); }
     if (!string.IsNullOrWhiteSpace(actor)) { query = query.Where(e => e.Actor == actor); }
+
+    // FR-8.4's date range, which was the one filter missing. An auditor's question is almost always
+    // bounded in time - "what happened to this supplier in March" - and without it the only way to
+    // answer was to page through everything.
+    if (from is { } start) { query = query.Where(e => e.OccurredAt >= start); }
+    if (to is { } end) { query = query.Where(e => e.OccurredAt <= end); }
 
     var entries = await query
         .OrderByDescending(e => e.EntryId)

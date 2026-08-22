@@ -20,12 +20,42 @@
         <button type="button" class="btn btn--primary" [disabled]="!canApprove() || busy()" (click)="approve()">
           Approve
         </button>
-        <button type="button" class="btn" [disabled]="busy() || t.status === 'Completed'" (click)="reject()">
+        <button type="button" class="btn" [disabled]="busy() || t.status === 'Completed'" (click)="startReject()">
           Reject
         </button>
       </div>
     }
   </header>
+
+  @if (rejecting()) {
+    <div class="reject-panel">
+      <h2>Why is this being rejected?</h2>
+      <p class="hint">The supplier is told this reason, and it is the only thing telling them what to fix.</p>
+
+      <label>
+        <span>Reason</span>
+        <select [value]="rejectionReason()" (change)="rejectionReason.set($any($event.target).value)">
+          @for (reason of rejectionReasons; track reason.value) {
+            <option [value]="reason.value">{{ reason.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        <span>Note {{ rejectionReason() === 'Other' ? '(required)' : '(optional)' }}</span>
+        <textarea rows="2" [value]="rejectionNote()"
+                  (input)="rejectionNote.set($any($event.target).value)"
+                  placeholder="Anything the supplier needs to know"></textarea>
+      </label>
+
+      <div class="reject-actions">
+        <button type="button" class="btn" (click)="cancelReject()">Cancel</button>
+        <button type="button" class="btn btn--danger" [disabled]="busy()" (click)="confirmReject()">
+          Reject document
+        </button>
+      </div>
+    </div>
+  }
 
   @if (error(); as message) {
     <p class="error" role="alert">{{ message }}</p>

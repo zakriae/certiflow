@@ -33,6 +33,14 @@ export const routes: Routes = [
     loadComponent: () => import('./review/review-screen').then((m) => m.ReviewScreen),
   },
   {
+    // FR-5.2, and the drill-down the dashboard was missing: the portfolio says who is failing, this
+    // says why and what proves it.
+    path: 'suppliers/:id',
+    title: 'Supplier - Certiflow',
+    canActivate: [authGuard],
+    loadComponent: () => import('./supplier/supplier-detail').then((m) => m.SupplierDetail),
+  },
+  {
     path: 'audit',
     title: 'Audit trail - Certiflow',
     canActivate: [roleGuard('Auditor', 'Reviewer', 'Admin')],

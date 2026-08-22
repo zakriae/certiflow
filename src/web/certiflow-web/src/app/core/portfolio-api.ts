@@ -33,9 +33,42 @@ export interface SupplierStanding {
   readonly lastEvaluatedAt: string | null;
 }
 
+export interface Evidence {
+  readonly documentId: string;
+  readonly certificateNumber: string;
+  readonly issuer: string;
+  readonly holderName: string;
+  readonly issuedOn: string;
+  readonly expiresOn: string;
+  readonly approvedBy: string;
+  readonly approvedAt: string;
+}
+
+export interface Obligation {
+  readonly requirementId: string;
+  readonly documentType: string;
+  readonly isMandatory: boolean;
+  readonly status: string;
+  readonly daysRemaining: number | null;
+  readonly evidence: Evidence | null;
+  readonly historyCount: number;
+}
+
+export interface SupplierCompliance {
+  readonly supplierId: string;
+  readonly categoryId: string | null;
+  readonly profileVersion: number;
+  readonly overallStatus: string;
+  readonly lastEvaluatedAt: string | null;
+  readonly obligations: readonly Obligation[];
+}
+
 export interface RegisteredSupplier {
   readonly supplierId: string;
   readonly legalName: string;
+  readonly tradingName: string | null;
+  readonly registrationNumber: string;
+  readonly country: string;
   readonly categoryId: string | null;
   readonly status: string;
 }
@@ -44,6 +77,7 @@ export interface RegisteredSupplier {
 export interface PortfolioView extends Dashboard {
   readonly names: ReadonlyMap<string, string>;
   readonly suppliers: readonly SupplierStanding[];
+  readonly registered: readonly RegisteredSupplier[];
 }
 
 export interface ReportSummary {
@@ -77,8 +111,18 @@ export class PortfolioApi {
         ...dashboard,
         names: new Map(registered.map((s) => [s.supplierId, s.legalName])),
         suppliers: standings,
+        registered,
       })),
     );
+  }
+
+  /** One supplier, obligation by obligation, with the evidence behind each (FR-5.2). */
+  compliance(supplierId: string): Observable<SupplierCompliance> {
+    return this.http.get<SupplierCompliance>(`/api/suppliers/${supplierId}/compliance`);
+  }
+
+  supplier(supplierId: string): Observable<RegisteredSupplier> {
+    return this.http.get<RegisteredSupplier>(`/api/registry/suppliers/${supplierId}`);
   }
 
   reportsFor(supplierId: string): Observable<readonly ReportSummary[]> {

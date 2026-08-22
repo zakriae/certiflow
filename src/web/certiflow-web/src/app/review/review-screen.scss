@@ -171,3 +171,45 @@
     &:focus-visible { outline: 2px solid #2c43a8; outline-offset: 2px; }
   }
 }
+
+// The rejection panel. Deliberately an interruption rather than a dropdown tucked beside the
+// button: choosing the reason is the decision, and the supplier only ever sees this one sentence.
+.reject-panel {
+  margin: 0.75rem 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  display: grid;
+  gap: 0.75rem;
+
+  h2 { margin: 0; font-size: 0.95rem; color: #b91c1c; }
+
+  .hint { margin: -0.4rem 0 0; font-size: 0.78rem; color: #7f1d1d; }
+
+  label {
+    display: grid;
+    gap: 0.3rem;
+
+    > span { font-size: 0.75rem; font-weight: 600; color: #7f1d1d; }
+  }
+
+  select, textarea {
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #fca5a5;
+    border-radius: 0.35rem;
+    background: #fff;
+    color: #1a202c;
+    font: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+  }
+
+  .reject-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+}
+
+.btn--danger {
+  background: #b91c1c;
+  color: #fff;
+  border-color: #b91c1c;
+}

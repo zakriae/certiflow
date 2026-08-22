@@ -31,6 +31,39 @@
     </div>
   }
 
+  <div class="filters">
+    <label>
+      <span>Entity id</span>
+      <input [value]="entityId()" (input)="entityId.set($any($event.target).value)"
+             placeholder="supplier, document or task id" />
+    </label>
+
+    <label>
+      <span>Actor</span>
+      <select [value]="actor()" (change)="actor.set($any($event.target).value)">
+        <option value="">Anyone</option>
+        @for (name of actors(); track name) {
+          <option [value]="name">{{ name }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>From</span>
+      <input type="date" [value]="from()" (change)="from.set($any($event.target).value)" />
+    </label>
+
+    <label>
+      <span>To</span>
+      <input type="date" [value]="to()" (change)="to.set($any($event.target).value)" />
+    </label>
+
+    <div class="filter-actions">
+      <button type="button" class="ghost" (click)="clearFilters()">Clear</button>
+      <button type="button" (click)="load()">Apply</button>
+    </div>
+  </div>
+
   <table>
     <thead>
       <tr><th>#</th><th>When</th><th>Action</th><th>Entity</th><th>Actor</th><th>Hash</th></tr>

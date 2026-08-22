@@ -35,12 +35,29 @@ export interface Notification {
   readonly readAt: string | null;
 }
 
+export interface AuditFilters {
+  readonly entityId?: string;
+  readonly actor?: string;
+  /** Dates as yyyy-MM-dd, from an <input type="date">. */
+  readonly from?: string;
+  readonly to?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuditApi {
   private readonly http = inject(HttpClient);
 
-  entries(take = 100): Observable<readonly AuditEntry[]> {
-    return this.http.get<readonly AuditEntry[]>(`/api/audit?take=${take}`);
+  entries(filters: AuditFilters = {}, take = 200): Observable<readonly AuditEntry[]> {
+    const query = new URLSearchParams({ take: String(take) });
+
+    // Only set what was actually chosen: an empty string is a filter that matches nothing, which
+    // looks identical to "no results" and is far more confusing.
+    if (filters.entityId) query.set('entityId', filters.entityId);
+    if (filters.actor) query.set('actor', filters.actor);
+    if (filters.from) query.set('from', new Date(filters.from).toISOString());
+    if (filters.to) query.set('to', new Date(`${filters.to}T23:59:59`).toISOString());
+
+    return this.http.get<readonly AuditEntry[]>(`/api/audit?${query}`);
   }
 
   verifyChain(): Observable<ChainVerification> {

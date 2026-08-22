@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Auth } from '../core/auth';
 import { PortfolioApi, PortfolioView, ReportSummary } from '../core/portfolio-api';
 
@@ -12,6 +13,7 @@ import { PortfolioApi, PortfolioView, ReportSummary } from '../core/portfolio-ap
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -25,14 +27,57 @@ export class Dashboard {
   protected readonly reports = signal<Record<string, readonly ReportSummary[]>>({});
   protected readonly expanded = signal<string | null>(null);
 
+  protected readonly countryFilter = signal('');
+  protected readonly statusFilter = signal('');
+
+  /** Only the countries actually present, so the filter can never offer an empty result. */
+  protected readonly countries = computed(() =>
+    [...new Set(this.view()?.registered.map((s) => s.country) ?? [])].sort());
+
+  /**
+   * FR-1.6's filters, applied in the browser.
+   *
+   * Deliberate: this list is one page of suppliers that has already been fetched, and a round trip
+   * per keystroke would make it slower, not faster. The API takes the same filters for the case
+   * this screen is not - a registry large enough that fetching it all is the wrong move.
+   */
+  protected readonly visibleSuppliers = computed(() => {
+    const view = this.view();
+
+    if (!view) {
+      return [];
+    }
+
+    const byId = new Map(view.registered.map((s) => [s.supplierId, s]));
+
+    return view.suppliers.filter((standing) => {
+      const registered = byId.get(standing.supplierId);
+      const country = this.countryFilter();
+      const status = this.statusFilter();
+
+      if (country && registered?.country !== country) {
+        return false;
+      }
+
+      return !status || standing.overallStatus === status;
+    });
+  });
+
   protected readonly totals = computed(() => {
     const totals = this.view()?.totals ?? {};
 
-    // Listed in severity order rather than whatever order the server's dictionary produced, and
-    // with zeroes shown: "NonCompliant 0" is information, a missing tile is ambiguity.
-    return (['NonCompliant', 'ExpiringSoon', 'Pending', 'Compliant'] as const).map((status) => ({
+    // These are ComplianceStatus, exactly: Pending, Compliant, AtRisk, NonCompliant.
+    //
+    // They used to be a list I wrote from memory, which included an "ExpiringSoon" that the domain
+    // does not have and omitted AtRisk, which it does. The result was a permanently empty tile and
+    // at-risk suppliers counted nowhere - the tiles summed to fewer suppliers than the list below
+    // them showed, which is the kind of arithmetic a viewer checks.
+    //
+    // Listed in severity order rather than whatever order the server's dictionary produced, and with
+    // zeroes shown: "Non-compliant 0" is information, a missing tile is ambiguity.
+    return (['NonCompliant', 'AtRisk', 'Pending', 'Compliant'] as const).map((status) => ({
       status,
-      label: status === 'NonCompliant' ? 'Non-compliant' : status === 'ExpiringSoon' ? 'Expiring soon' : status,
+      label: status === 'NonCompliant' ? 'Non-compliant' : status === 'AtRisk' ? 'At risk' : status,
       count: totals[status] ?? 0,
     }));
   });
