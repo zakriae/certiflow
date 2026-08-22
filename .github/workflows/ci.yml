@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Manual too, so a run can be repeated without inventing a commit to hang it on - which is what
+  # you want the first time CI is unblocked, or when a run failed for a reason outside the code.
+  workflow_dispatch:
 
 permissions:
   contents: read
